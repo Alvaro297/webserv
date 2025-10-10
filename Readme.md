@@ -1,5 +1,7 @@
 **Persona A Alvaro**
+
 **Persona B Dani**
+
 **Persona C Mario**
 
 Si terminais algo marcarlo ya sea en negrita con un listo o tachandolo (No lo quiteis)
