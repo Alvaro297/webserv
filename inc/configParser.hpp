@@ -7,9 +7,10 @@
 
 struct ServerConfigStruct {
 	std::string host;
-	int         port;
+	int			port;
 	std::string root;
 	std::string server_name;
+	int			ipv;
 	std::vector<std::string> index;
 };
 

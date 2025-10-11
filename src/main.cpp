@@ -11,6 +11,6 @@ int main(int argc, char** argv)
 	}
 	//if (!ConfigParser::RunParser(argv[1]))
 	//	return 1;
-	ServerConfig(ConfigParser::RunParser(argv[1]));
+	std::vector<ServerConfig> servers = ConfigParser::RunParser(argv[1]);
 	return 0;
 }

@@ -1,9 +1,70 @@
-#include "ServerConfig.hpp"
+#include "../../inc/ServerConfig.hpp"
+#include "../../inc/configParser.hpp"
 
-
-ServerConfig::ServerConfig(const ServerConfigStruct server)
+ServerConfig::ServerConfig(const ServerConfigStruct server, int id)
 {
-	
+	this->id = id;
+	this->port = server.port;
+	this->host = normalizeHost(server.host);
+	this->server_name = server.server_name;
+	this->root = normalizeRoot(server.root);
+	this->ipv = server.ipv;
+	this->index = server.index;
+}
+
+ServerConfig::ServerConfig(const ServerConfig& other)
+{
+	if (this != &other)
+	{
+		this->id = other.id;
+		this->port = other.port;
+		this->host = other.host;
+		this->server_name = other.server_name;
+		this->root = other.root;
+		this->ipv = other.ipv;
+		this->index = other.index;
+	}
+}
+
+ServerConfig& ServerConfig::operator=(const ServerConfig& other)
+{
+	if (this != &other)
+	{
+		this->id = other.id;
+		this->port = other.port;
+		this->host = other.host;
+		this->server_name = other.server_name;
+		this->root = other.root;
+		this->ipv = other.ipv;
+		this->index = other.index;
+	}
+	return *this;
+}
+
+ServerConfig::~ServerConfig() {}
+
+
+std::string ServerConfig::normalizeRoot(std::string root)
+{
+	if (root.empty())
+		root = "/var/www/html";
+	else if (root.back() == '/')
+		root.pop_back();
+	return root;
+}
+
+std::string ServerConfig::normalizeHost(std::string host)
+{
+	size_t position = host.find(":"); //Revisar si esto hay que controlarlo o no
+
+	if (position != std::string::npos)
+		host = host.substr(0, position); // Aqui se quita el puerto en el host
+	host.erase(std::remove(host.begin(), host.end(), ' '), host.end());
+	if (host.empty() || host == "*")
+		host = "0.0.0.0";
+	else if (host == "localhost")
+		host = "127.0.0.1";
+	return host;
 }
 
 // Getters

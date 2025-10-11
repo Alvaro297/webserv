@@ -6,6 +6,7 @@
 # include <iostream>
 # include <vector>
 # include <map>
+# include <algorithm>
 # include <winsock2.h>
 # include <sys/socket.h>
 
@@ -20,15 +21,19 @@ private:
 	std::string					root;
 	int							ipv;
 	std::vector<std::string>	index;
-	int findTypeOfIpv(std::string host);
+
+
+	std::string normalizeRoot(std::string root);
+	std::vector<std::string> normalizeIndex(std::vector<std::string> index);
+	std::string normalizeHost(std::string host);
 public:
 	ServerConfig();
-	ServerConfig(const ServerConfigStruct server);
+	ServerConfig(const ServerConfigStruct server, int i);
 	ServerConfig(const ServerConfig& other);
 	ServerConfig& operator=(const ServerConfig& other);
 	~ServerConfig();
 
-
+	void printConfig() const;
 
 	//Getters
 	int getId() const;
