@@ -24,7 +24,6 @@ private:
 
 
 	std::string normalizeRoot(std::string root);
-	std::vector<std::string> normalizeIndex(std::vector<std::string> index);
 	std::string normalizeHost(std::string host);
 public:
 	ServerConfig();
