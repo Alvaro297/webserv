@@ -53,6 +53,7 @@ public:
 	void setIpv(const int ipv);
 	void setIndex(const std::vector<std::string> index);
 
+	//Faltan funciones para escuchar al cliente (Para cuando el server se pueda conectar xd)
 };
 
 
