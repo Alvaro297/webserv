@@ -9,7 +9,7 @@ class Server
 {
 private:
 	std::vector<ServerConfig>	_servers;
-	std::map<std::string,int>	_listeners;
+	std::map<std::string,int>	_listeners; //Host:puerto y listener fd
 
 	void initSockets(); //Inicializar sockets (Rellena _listeners) -Falta
 	void closeSockets(); //Cierra los sockets (No todos) -Falta
