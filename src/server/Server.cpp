@@ -57,3 +57,8 @@ void Server::initSockets()
 		createListener(_servers[i], fullhost);
 	}
 }
+
+void Server::run()
+{
+	
+}
