@@ -92,6 +92,7 @@
 		"numbers": "cpp",
 		"ranges": "cpp",
 		"span": "cpp",
-		"map": "cpp"
+		"map": "cpp",
+		"cstring": "cpp"
 	}
 }
