@@ -1,12 +1,6 @@
 #include "../../inc/Server.hpp"
 #include "../../inc/ServerConfig.hpp"
-#include <cstring>
-#include <unistd.h>
-#include <cerrno>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <sstream>
+
 
 Server::Server(std::vector<ServerConfig>& server)
 {
@@ -65,7 +59,35 @@ void Server::initSockets()
 	}
 }
 
-/*void Server::run()
+void Server::run()
 {
+	int nbrPoll, ready;
+	struct pollfd fds[this->_listeners.size()];
 	
-}*/
+	for (std::map<std::string, Listeners>::iterator it = _listeners.begin(); 
+		 it != _listeners.end(); ++it)
+	{
+		fds[nbrPoll].fd = it->second.fd;        // Socket fd
+		fds[nbrPoll].events = POLLIN;           // Queremos detectar conexiones entrantes
+		fds[nbrPoll].revents = 0;               // Limpiar eventos
+		nbrPoll++;
+	}
+	//Loop principal
+	while (true)
+	{
+		ready = poll(fds, nbrPoll, -1);
+		if (ready < 0)
+		{
+			std::cerr << "poll() failed: " << strerror(errno) << std::endl;
+			break;
+		}
+		for (int i = 0; i < nbrPoll; i++)
+		{
+			if (fds[i].revents & POLLIN)
+			{
+				//accept()
+				std::cout << "Activity detected on fd: " << fds[i].fd << std::endl;
+			}
+		}
+	}
+}

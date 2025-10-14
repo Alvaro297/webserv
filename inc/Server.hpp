@@ -4,7 +4,15 @@
 # include <iostream>
 # include <vector>
 # include <map>
+# include <cstring>
+# include <unistd.h>
+# include <cerrno>
+# include <sstream>
+# include <sys/socket.h>
+# include <netinet/in.h>
+# include <arpa/inet.h>
 # include <netinet/in.h> // For sockaddr_in
+# include <poll.h>
 
 struct Listeners
 {
