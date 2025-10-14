@@ -14,8 +14,8 @@ Persona	Rol	Módulos principales
 📆 Semana 1 — Fundamentos y base del servidor
 Persona	Tareas
 A	- Implementar clase Server que abra sockets y escuche.
-- Aceptar conexiones (bloqueante al principio).
-- Montar estructura del bucle principal (poll() o kqueue()).
+**- Aceptar conexiones (bloqueante al principio).**
+**- Montar estructura del bucle principal (poll() o kqueue()).**
 - Estructurar proyecto: carpetas, Makefile, namespaces.
 B	- Diseñar clases Request y Response (headers, body, status code).
 - Entender y resumir RFC 2616 (HTTP/1.1).

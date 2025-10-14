@@ -59,9 +59,28 @@ void Server::initSockets()
 	}
 }
 
+void Server::acceptSocket(int nbrPoll, int connect, pollfd *fds)
+{
+	for (int i = 0; i < nbrPoll; i++)
+	{
+		if (fds[i].revents & POLLIN)
+		{
+			sockaddr_in client_addr;
+			socklen_t client_len = sizeof(client_addr);
+			connect = accept(fds[i].fd, (struct sockaddr*)&client_addr, &client_len);
+			if (connect < 0)
+			{
+				std::cerr << "accept() failed: " << strerror(errno) << std::endl;
+				continue;
+			}
+			std::cout << "Activity detected on fd: " << fds[i].fd << std::endl;
+		}
+	}
+}
+
 void Server::run()
 {
-	int nbrPoll, ready;
+	int nbrPoll = 0, connect = 0, ready;
 	struct pollfd fds[this->_listeners.size()];
 	
 	for (std::map<std::string, Listeners>::iterator it = _listeners.begin(); 
@@ -81,13 +100,6 @@ void Server::run()
 			std::cerr << "poll() failed: " << strerror(errno) << std::endl;
 			break;
 		}
-		for (int i = 0; i < nbrPoll; i++)
-		{
-			if (fds[i].revents & POLLIN)
-			{
-				//accept()
-				std::cout << "Activity detected on fd: " << fds[i].fd << std::endl;
-			}
-		}
+		acceptSocket(nbrPoll, connect, fds);
 	}
 }
