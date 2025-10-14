@@ -67,9 +67,9 @@ void Server::run()
 	for (std::map<std::string, Listeners>::iterator it = _listeners.begin(); 
 		 it != _listeners.end(); ++it)
 	{
-		fds[nbrPoll].fd = it->second.fd;        // Socket fd
-		fds[nbrPoll].events = POLLIN;           // Queremos detectar conexiones entrantes
-		fds[nbrPoll].revents = 0;               // Limpiar eventos
+		fds[nbrPoll].fd = it->second.fd;
+		fds[nbrPoll].events = POLLIN;
+		fds[nbrPoll].revents = 0;
 		nbrPoll++;
 	}
 	//Loop principal
