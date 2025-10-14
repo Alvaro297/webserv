@@ -48,8 +48,8 @@ std::string ServerConfig::normalizeRoot(std::string root)
 {
 	if (root.empty())
 		root = "/var/www/html";
-	else if (root.back() == '/')
-		root.pop_back();
+	else if (!root.empty() && root[root.length() - 1] == '/')
+		root.erase(root.length() - 1);
 	return root;
 }
 

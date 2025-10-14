@@ -4,6 +4,7 @@
 # include <iostream>
 # include <vector>
 # include <map>
+# include <netinet/in.h> // For sockaddr_in
 
 struct Listeners
 {
@@ -21,7 +22,7 @@ private:
 
 	void initSockets(); //Inicializar sockets (Rellena _listeners) -Falta
 	void closeSockets(); //Cierra los sockets (No todos) -Falta
-	void Server::createListener(const ServerConfig& config, const std::string& fullhost);
+	void createListener(const ServerConfig& config, const std::string& fullhost);
 public:
 	Server();
 	Server(std::vector<ServerConfig>& servers);

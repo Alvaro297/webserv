@@ -1,14 +1,15 @@
 #ifndef ServerConfig_HPP
 # define ServerConfig_HPP
 
-# include <configParser.hpp>
+# include "configParser.hpp"
 # include <string>
 # include <iostream>
 # include <vector>
 # include <map>
 # include <algorithm>
-# include <winsock2.h>
 # include <sys/socket.h>
+
+struct ServerConfigStruct;
 
 
 class ServerConfig

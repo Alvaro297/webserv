@@ -77,14 +77,14 @@ std::vector<ServerConfig> ConfigParser::RunParser(const char * config_file)
 		std::vector<ServerConfigStruct> serversParsing;
 		std::vector<ServerConfig> servers;
 		LoadFile(std::string(config_file), serversParsing);
-		std::cout << "Found " << servers.size() << " server(s)" << std::endl;
+		std::cout << "Found " << serversParsing.size() << " server(s)" << std::endl;
 		for (size_t i = 0; i < serversParsing.size(); i++)
-			servers[i] = ServerConfig(serversParsing[i], i);
+			servers.push_back(ServerConfig(serversParsing[i], i));
 		return servers;
 	}
 	catch(const std::exception& e)
 	{
 		std::cerr << e.what() << '\n';
+		return std::vector<ServerConfig>(); // Return empty vector on error
 	}
-	
 }

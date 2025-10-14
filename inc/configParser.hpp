@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 
+class ServerConfig;
+
 
 struct ServerConfigStruct {
 	std::string host;

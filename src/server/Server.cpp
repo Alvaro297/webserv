@@ -2,6 +2,11 @@
 #include "../../inc/ServerConfig.hpp"
 #include <cstring>
 #include <unistd.h>
+#include <cerrno>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <sstream>
 
 Server::Server(std::vector<ServerConfig>& server)
 {
@@ -44,11 +49,13 @@ void Server::createListener(const ServerConfig& config, const std::string& fullh
 void Server::initSockets()
 {
 	std::string					fullhost;
-	int							fdSocket;
 
 	for (size_t i = 0; i < this->_servers.size(); i++)
 	{
-		fullhost = _servers[i].getHost() + ":" + std::to_string(_servers[i].getPort());
+		// Convert port to string (C++98 compatible)
+		std::stringstream ss;
+		ss << _servers[i].getPort();
+		fullhost = _servers[i].getHost() + ":" + ss.str();
 		if (this->_listeners.find(fullhost) != this->_listeners.end())
 		{
 			this->_listeners[fullhost].servers.push_back(_servers[i]);
@@ -58,7 +65,7 @@ void Server::initSockets()
 	}
 }
 
-void Server::run()
+/*void Server::run()
 {
 	
-}
+}*/

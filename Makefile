@@ -6,7 +6,9 @@ SRC_DIR  := src
 OBJ_DIR  := obj
 
 SRCS := main.cpp \
-        configParser.cpp
+        configParser.cpp \
+        server/ServerConfig.cpp \
+        server/Server.cpp
 
 SRCS := $(addprefix $(SRC_DIR)/, $(SRCS))
 OBJS := $(addprefix $(OBJ_DIR)/, $(SRCS:$(SRC_DIR)/%.cpp=%.o))
@@ -19,6 +21,7 @@ $(NAME): $(OBJS)
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR)
 	@printf "\033[1;34m[🛠] Building:\033[0m %s\n" "$<"
+	@mkdir -p $(dir $@)
 	@$(CXX) $(CXXFLAGS) -c $< -o $@
 
 $(OBJ_DIR):
