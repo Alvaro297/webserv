@@ -1,5 +1,6 @@
 #include "../inc/configParser.hpp"
 #include "../inc/ServerConfig.hpp"
+#include "../inc/Server.hpp"
 #include <iostream>
 
 
@@ -12,11 +13,11 @@ int main(int argc, char** argv)
 	}
 	
 	std::vector<ServerConfig> servers = ConfigParser::RunParser(argv[1]);
-	
+	Server server(servers);
+	server.run();
 	for (size_t i = 0; i < servers.size(); ++i) {
 		servers[i].printConfig();
 		std::cout << std::endl;
 	}
-	
 	return 0;
 }

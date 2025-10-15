@@ -8,6 +8,20 @@ Server::Server(std::vector<ServerConfig>& server)
 	initSockets();
 }
 
+Server::Server() {}
+
+Server& Server::operator=(const Server& other)
+{
+	if (this != &other)
+	{
+		this->_listeners = other._listeners;
+		this->_servers = other._servers;
+	}
+	return *this;
+}
+
+Server::~Server() {}
+
 void Server::createListener(const ServerConfig& config, const std::string& fullhost)
 {
 	Listeners	listener;
@@ -63,8 +77,10 @@ void Server::acceptSocket(int nbrPoll, int connect, pollfd *fds)
 {
 	for (int i = 0; i < nbrPoll; i++)
 	{
+		std::cout << "Estamos dentro de socketAccepted " << nbrPoll << std::endl;
 		if (fds[i].revents & POLLIN)
 		{
+			std::cout << "Estamos dentro de socketAccepted del if " << nbrPoll << std::endl;
 			sockaddr_in client_addr;
 			socklen_t client_len = sizeof(client_addr);
 			connect = accept(fds[i].fd, (struct sockaddr*)&client_addr, &client_len);

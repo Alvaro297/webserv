@@ -35,6 +35,7 @@ private:
 public:
 	Server();
 	Server(std::vector<ServerConfig>& servers);
+	Server& operator=(const Server& other);
 	~Server();
 
 	void run(); //Escuchar (Bucle infinito) -Falta
