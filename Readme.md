@@ -16,13 +16,13 @@ Persona	Tareas
 A	- Implementar clase Server que abra sockets y escuche.
 **- Aceptar conexiones (bloqueante al principio).**
 **- Montar estructura del bucle principal (poll() o kqueue()).**
-- Estructurar proyecto: carpetas, Makefile, namespaces.
+**- Estructurar proyecto: carpetas, Makefile, namespaces.**
 B	- Diseñar clases Request y Response (headers, body, status code).
 - Entender y resumir RFC 2616 (HTTP/1.1).
 - Implementar parsing básico de una request simple (GET).
 C	- Crear parser básico de configuración (server { ... }).
-- Leer archivo .conf y almacenar hosts, puertos, root, etc.
-- Documentar formato de config para el equipo.
+**- Leer archivo .conf y almacenar hosts, puertos, root, etc.**
+**- Documentar formato de config para el equipo.**
 
 🎯 Objetivo semana 1:
 Servidor levanta, acepta conexiones y responde “Hello World” en localhost:8080.
@@ -31,14 +31,14 @@ Estructura de código lista.
 📆 Semana 2 — HTTP funcional
 Persona	Tareas
 A	- Convertir el servidor a no bloqueante.
-- Implementar poll() o kqueue() para manejar varios clientes.
+**- Implementar poll() o kqueue() para manejar varios clientes.**
 - Crear clase Client con buffer de lectura/escritura.
 - Enviar datos a B (interfaz de lectura de request).
 B	- Completar parsing HTTP: método, headers, body, versión.
 - Implementar GET correctamente con rutas.
 - Crear respuestas dinámicas con headers y códigos (200, 404, etc.).
 C	- Completar ConfigParser (múltiples servidores, locations).
-- Asociar rutas con configuración (root, index, error_page).
+**- Asociar rutas con configuración (root, index, error_page).**
 - Servir archivos estáticos (index.html, imágenes, etc.).
 
 🎯 Objetivo semana 2:
