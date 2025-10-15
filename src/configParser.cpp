@@ -15,7 +15,7 @@ ConfigParser::~ConfigParser() {}
 
 const std::string& ConfigParser::LastError() { return s_lastError; }
 
-bool ConfigParser::readAll(const std::string& path, std::string& out) {
+bool ConfigParser::readFile(const std::string& path, std::string& out) {
 	std::ifstream ifs(path.c_str(), std::ios::in | std::ios::binary);
 	if (!ifs) { s_lastError = "Could not open file: " + path; return false; }
 	std::ostringstream oss;
@@ -24,51 +24,105 @@ bool ConfigParser::readAll(const std::string& path, std::string& out) {
 	return true;
 }
 
-bool ConfigParser::LoadFile(const std::string& path,
-							std::vector<ServerConfigStruct>& outServers) {
-	s_lastError.clear();
-	std::string text;
-	if (!readAll(path, text)) return false;
+
+bool ConfigParser::fillServer(const std::string& block, ServerConfigStruct& server) {
+	std::istringstream iss(block);
+	std::string line;
 	
-	size_t pos = 0;
-	int serverCount = 0;
-	while ((pos = text.find("server", pos)) != std::string::npos) {
-		bool isWholeWord = true;
-		if (pos > 0 && std::isalnum(text[pos - 1])) isWholeWord = false;
-		if (pos + 6 < text.length() && std::isalnum(text[pos + 6])) isWholeWord = false;
+	while (std::getline(iss, line)) {
+		size_t start = line.find_first_not_of(" \t\r\n");
+		if (start == std::string::npos) continue;
 		
-		if (isWholeWord) {
-			size_t bracePos = pos + 6;
-			while (bracePos < text.length() && std::isspace(text[bracePos])) {
-				bracePos++;
-			}
-			if (bracePos < text.length() && text[bracePos] == '{') {
-				serverCount++;
-				ServerConfigStruct srv;
-				srv.port = 8080;
-				srv.root = "/var/www/html";
-				outServers.push_back(srv);
+		size_t end = line.find_last_not_of(" \t\r\n");
+		line = line.substr(start, end - start + 1);
+		
+		if (line.empty() || line[0] == '#') continue;
+		
+		if (!line.empty() && line[line.length() - 1] == ';') {
+			line.erase(line.length() - 1);
+		}
+		
+		std::istringstream lineStream(line);
+		std::string key;
+		lineStream >> key;
+		
+		if (key == "host") {
+			lineStream >> server.host;
+		}
+		else if (key == "port") {
+			lineStream >> server.port;
+		}
+		else if (key == "root") {
+			lineStream >> server.root;
+		}
+		else if (key == "server_name") {
+			lineStream >> server.server_name;
+		}
+		else if (key == "index") {
+			server.index.clear();
+			std::string indexFile;
+			while (lineStream >> indexFile) {
+				server.index.push_back(indexFile);
 			}
 		}
-		pos += 6;
 	}
 	
 	return true;
 }
 
-/*bool ConfigParser::RunParser(const char* config_file)
-{
-	std::vector<ServerConfig> servers;
-	if (!LoadFile(std::string(config_file), servers))
-	{
-		std::cerr << "Error: " << LastError() << std::endl;
-		return false;
-	}
-	//Creo que esto debe retornar o una excepcion o servers que lo necesito para ello
-	std::cout << "Found " << servers.size() << " server(s)" << std::endl;
+
+bool ConfigParser::searchServers(const std::string& text,
+							std::vector<ServerConfigStruct>& outServers) {
 	
+	size_t pos = 0;
+	while ((pos = text.find("server", pos)) != std::string::npos) {
+
+		// Check if 'server' is not part of another word
+		if (pos > 0 && text[pos - 1] != '\n'){
+			pos += 6;
+			continue;
+		} 
+
+		// Search for opening brace '{'
+		size_t bracePos = pos + 6;
+		while (bracePos < text.length() && std::isspace(text[bracePos])) {
+			bracePos++;
+		}
+
+		if (bracePos < text.length() && text[bracePos] == '{') {
+			size_t blockStart = bracePos + 1;
+			size_t blockEnd = blockStart;
+			int braceCount = 1;
+			
+			// Find the matching closing brace '}'
+			while (blockEnd < text.length() && braceCount > 0) {
+				if (text[blockEnd] == '{') braceCount++;
+				else if (text[blockEnd] == '}') braceCount--;
+				blockEnd++;
+			}
+			
+			if (braceCount == 0) {
+				std::string serverBlock = text.substr(blockStart, blockEnd - blockStart - 1);
+				ServerConfigStruct srv;
+				srv.port = 8080;
+				srv.host = "127.0.0.1";
+				srv.root = "/var/www/html";
+				srv.server_name = "";
+				srv.ipv = 4;
+				
+				if (fillServer(serverBlock, srv)) {
+					outServers.push_back(srv);
+				}
+			}
+			else {
+				s_lastError = "Mismatched braces in server block.";
+				return false;
+			}
+		}
+		pos += 6;
+	}
 	return true;
-}*/
+}
 
 std::vector<ServerConfig> ConfigParser::RunParser(const char * config_file)
 {
@@ -76,8 +130,16 @@ std::vector<ServerConfig> ConfigParser::RunParser(const char * config_file)
 	{
 		std::vector<ServerConfigStruct> serversParsing;
 		std::vector<ServerConfig> servers;
-		LoadFile(std::string(config_file), serversParsing);
-		std::cout << "Found " << serversParsing.size() << " server(s)" << std::endl;
+		std::string text;
+
+		if (!readFile((config_file), text)){
+			std::cerr << "Error: " << LastError() << std::endl;
+			return std::vector<ServerConfig>(); // Return empty vector on error
+		}
+		if (!searchServers(text, serversParsing)) {
+			std::cerr << "Error: " << LastError() << std::endl;
+			return std::vector<ServerConfig>(); // Return empty vector on error
+		}
 		for (size_t i = 0; i < serversParsing.size(); i++)
 			servers.push_back(ServerConfig(serversParsing[i], i));
 		return servers;
@@ -88,3 +150,5 @@ std::vector<ServerConfig> ConfigParser::RunParser(const char * config_file)
 		return std::vector<ServerConfig>(); // Return empty vector on error
 	}
 }
+
+

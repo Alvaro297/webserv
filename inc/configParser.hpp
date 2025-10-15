@@ -25,13 +25,13 @@ private:
 	ConfigParser& operator=(const ConfigParser& other);
 	~ConfigParser();
 
-	static bool readAll(const std::string& path, std::string& out);
+	static bool readFile(const std::string& path, std::string& out);
 	static const std::string& LastError();
-	static bool LoadFile(const std::string& path,
-						 std::vector<ServerConfigStruct>& outServers);
+	static bool searchServers(const std::string& text,
+							std::vector<ServerConfigStruct>& outServers);
+	static bool fillServer(const std::string& block, ServerConfigStruct& server);
 
 public:
-//    static bool RunParser(const char* config_file);
 	static std::vector<ServerConfig> RunParser(const char* config_file);
 };
 

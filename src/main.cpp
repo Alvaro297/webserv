@@ -2,6 +2,7 @@
 #include "../inc/ServerConfig.hpp"
 #include <iostream>
 
+
 int main(int argc, char** argv)
 {
 	if (argc != 2)
@@ -9,8 +10,13 @@ int main(int argc, char** argv)
 		std::cerr << "Usage: " << argv[0] << " <config_file.conf>\n";
 		return 1;
 	}
-	//if (!ConfigParser::RunParser(argv[1]))
-	//	return 1;
+	
 	std::vector<ServerConfig> servers = ConfigParser::RunParser(argv[1]);
+	
+	for (size_t i = 0; i < servers.size(); ++i) {
+		servers[i].printConfig();
+		std::cout << std::endl;
+	}
+	
 	return 0;
 }

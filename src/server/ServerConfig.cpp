@@ -1,5 +1,16 @@
 #include "../../inc/ServerConfig.hpp"
 #include "../../inc/configParser.hpp"
+#include <iostream>
+
+ServerConfig::ServerConfig() 
+{
+	this->id = 0;
+	this->port = 8080;
+	this->host = "127.0.0.1";
+	this->server_name = "localhost";
+	this->root = "/var/www/html";
+	this->ipv = 4;
+}
 
 ServerConfig::ServerConfig(const ServerConfigStruct server, int id)
 {
@@ -85,3 +96,20 @@ void ServerConfig::setServerName(const std::string& value) { server_name = value
 void ServerConfig::setRoot(const std::string& value) { root = value; }
 void ServerConfig::setIpv(const int value) { ipv = value; }
 void ServerConfig::setIndex(const std::vector<std::string> value) { index = value; }
+
+void ServerConfig::printConfig() const
+{
+	std::cout << "Server Configuration:" << std::endl;
+	std::cout << "  ID: " << id << std::endl;
+	std::cout << "  Host: " << host << std::endl;
+	std::cout << "  Port: " << port << std::endl;
+	std::cout << "  Server Name: " << server_name << std::endl;
+	std::cout << "  Root: " << root << std::endl;
+	std::cout << "  IPv: " << ipv << std::endl;
+	std::cout << "  Index files: ";
+	for (size_t i = 0; i < index.size(); ++i) {
+		std::cout << index[i];
+		if (i < index.size() - 1) std::cout << ", ";
+	}
+	std::cout << std::endl << std::endl;
+}
