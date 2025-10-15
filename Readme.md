@@ -22,7 +22,7 @@ B	- Diseñar clases Request y Response (headers, body, status code).
 - Implementar parsing básico de una request simple (GET).
 C	- Crear parser básico de configuración (server { ... }).
 **- Leer archivo .conf y almacenar hosts, puertos, root, etc.**
-**- Documentar formato de config para el equipo.**
+**- Documentar formato de config para el equipo.V**
 
 🎯 Objetivo semana 1:
 Servidor levanta, acepta conexiones y responde “Hello World” en localhost:8080.
