@@ -98,12 +98,12 @@ void Server::acceptSocket(int nbrPoll, int connect, std::vector<struct pollfd> f
 void Server::run()
 {
 	int connect = 0, ready;
-	std::vector<struct pollfd> fds;
 	struct pollfd tmp;
 
 	//Loop principal
 	while (true)
 	{
+		std::vector<struct pollfd> fds;
 		fds.clear();
 		for (std::map<std::string, Listeners>::iterator it = _listeners.begin();
 			 it != _listeners.end(); ++it)
