@@ -33,6 +33,7 @@ void Server::createListener(const ServerConfig& config, const std::string& fullh
 		std::cerr << "socket() failed for " << fullhost << ": " << strerror(errno) << std::endl;
 		return;
 	}
+	fcntl(fdSocket, F_SETFL, O_NONBLOCK);
 	listener.connect.sin_family = AF_INET;
 	listener.connect.sin_port = htons(config.getPort());
 	listener.connect.sin_addr.s_addr = inet_addr(config.getHost().c_str());
@@ -56,7 +57,7 @@ void Server::createListener(const ServerConfig& config, const std::string& fullh
 
 void Server::initSockets()
 {
-	std::string					fullhost;
+	std::string		fullhost;
 
 	for (size_t i = 0; i < this->_servers.size(); i++)
 	{
@@ -73,20 +74,22 @@ void Server::initSockets()
 	}
 }
 
-void Server::acceptSocket(int nbrPoll, int connect, pollfd *fds)
+void Server::acceptSocket(int nbrPoll, int connect, std::vector<struct pollfd> fds)
 {
-	for (int i = 0; i < nbrPoll; i++)
+	for (int i = 0; i < nbrPoll && i < static_cast<int>(fds.size()); ++i)
 	{
 		if (fds[i].revents & POLLIN)
 		{
 			sockaddr_in client_addr;
 			socklen_t client_len = sizeof(client_addr);
 			connect = accept(fds[i].fd, (struct sockaddr*)&client_addr, &client_len);
-			if (connect < 0)
+			if (client_fd < 0)
 			{
 				std::cerr << "accept() failed: " << strerror(errno) << std::endl;
 				continue;
 			}
+			fcntl(connect, F_SETFL, O_NONBLOCK);
+			this->_client[connect] = Client(connect);
 			std::cout << "Activity detected on fd: " << fds[i].fd << std::endl;
 		}
 	}
@@ -94,26 +97,41 @@ void Server::acceptSocket(int nbrPoll, int connect, pollfd *fds)
 
 void Server::run()
 {
-	int nbrPoll = 0, connect = 0, ready;
-	struct pollfd fds[this->_listeners.size()];
-	
-	for (std::map<std::string, Listeners>::iterator it = _listeners.begin(); 
-		 it != _listeners.end(); ++it)
-	{
-		fds[nbrPoll].fd = it->second.fd;
-		fds[nbrPoll].events = POLLIN;
-		fds[nbrPoll].revents = 0;
-		nbrPoll++;
-	}
+	int connect = 0, ready;
+	std::vector<struct pollfd> fds;
+	struct pollfd tmp;
+
 	//Loop principal
 	while (true)
 	{
-		ready = poll(fds, nbrPoll, -1);
+		fds.clear();
+		for (std::map<std::string, Listeners>::iterator it = _listeners.begin();
+			 it != _listeners.end(); ++it)
+		{
+			tmp.fd = it->second.fd;
+			tmp.events = POLLIN;
+			tmp.revents = 0;
+			fds.push_back(tmp);
+		}
+		for (std::map<int,Client>::iterator it = _client.begin(); it != _client.end(); ++it)
+		{
+			struct pollfd pfd;
+			pfd.fd = it->first;
+			pfd.events = POLLIN;
+			pfd.revents = 0;
+			fds.push_back(pfd);
+		}
+		if (fds.empty())
+		{
+			std::cerr << "No file descriptors to poll." << std::endl;
+			break;
+		}
+		ready = poll(&fds[0], fds.size(), -1);
 		if (ready < 0)
 		{
 			std::cerr << "poll() failed: " << strerror(errno) << std::endl;
 			break;
 		}
-		acceptSocket(nbrPoll, connect, fds);
+		acceptSocket(static_cast<int>(fds.size()), connect, fds);
 	}
 }
