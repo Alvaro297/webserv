@@ -9,7 +9,6 @@
 # include <cerrno>
 # include <sstream>
 # include <fcntl.h>
-# include "Client.hpp"
 # include <sys/socket.h>
 # include <netinet/in.h>
 # include <arpa/inet.h>

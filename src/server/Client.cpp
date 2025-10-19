@@ -1,17 +1,14 @@
 #include "../../inc/Client.hpp"
 
-// Constructor por defecto
 Client::Client() : fd(-1), readBuffer(""), writeBuffer("")
 {
 }
 
-// Constructor con fd
 Client::Client(int client_fd) : fd(client_fd), readBuffer(""), writeBuffer("")
 {
 	std::cout << "Client created with fd: " << fd << std::endl;
 }
 
-// Operador de asignación
 Client& Client::operator=(const Client& other)
 {
 	if (this != &other)
@@ -23,7 +20,6 @@ Client& Client::operator=(const Client& other)
 	return *this;
 }
 
-// Destructor
 Client::~Client()
 {
 	if (fd >= 0)
@@ -34,7 +30,6 @@ Client::~Client()
 	}
 }
 
-// Getters
 int Client::getFd() const
 {
 	return fd;

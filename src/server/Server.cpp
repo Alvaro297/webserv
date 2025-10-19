@@ -1,5 +1,6 @@
 #include "../../inc/Server.hpp"
 #include "../../inc/ServerConfig.hpp"
+#include "../../inc/Client.hpp"
 
 
 Server::Server(std::vector<ServerConfig>& server)
@@ -74,30 +75,43 @@ void Server::initSockets()
 	}
 }
 
-void Server::acceptSocket(int nbrPoll, int connect, std::vector<struct pollfd> fds)
+void Server::readClient(int fds)
 {
-	for (int i = 0; i < nbrPoll && i < static_cast<int>(fds.size()); ++i)
+	(void) fds;
+}
+
+
+void Server::acceptSocket(int fds)
+{
+	int connect = 0;
+
+	sockaddr_in client_addr;
+	socklen_t client_len = sizeof(client_addr);
+	connect = accept(fds, (struct sockaddr*)&client_addr, &client_len);
+	if (connect < 0)
 	{
-		if (fds[i].revents & POLLIN)
-		{
-			sockaddr_in client_addr;
-			socklen_t client_len = sizeof(client_addr);
-			connect = accept(fds[i].fd, (struct sockaddr*)&client_addr, &client_len);
-			if (client_fd < 0)
-			{
-				std::cerr << "accept() failed: " << strerror(errno) << std::endl;
-				continue;
-			}
-			fcntl(connect, F_SETFL, O_NONBLOCK);
-			this->_client[connect] = Client(connect);
-			std::cout << "Activity detected on fd: " << fds[i].fd << std::endl;
-		}
+		std::cerr << "accept() failed: " << strerror(errno) << std::endl;
+		return ;
 	}
+	fcntl(connect, F_SETFL, O_NONBLOCK);
+	this->_client[connect] = Client(connect);
+	std::cout << "Activity detected on fd: " << fds << std::endl;
+}
+
+bool isListener(std::map<std::string, Listeners> _listeners, int fdListener)
+{
+	for (std::map<std::string, Listeners>::iterator it = _listeners.begin();
+			 it != _listeners.end(); ++it)
+	{
+		if (it->second.fd == fdListener)
+			return true;
+	}
+	return false;
 }
 
 void Server::run()
 {
-	int connect = 0, ready;
+	int ready, nbrPoll = 0;
 	struct pollfd tmp;
 
 	//Loop principal
@@ -111,6 +125,7 @@ void Server::run()
 			tmp.fd = it->second.fd;
 			tmp.events = POLLIN;
 			tmp.revents = 0;
+			nbrPoll++;
 			fds.push_back(tmp);
 		}
 		for (std::map<int,Client>::iterator it = _client.begin(); it != _client.end(); ++it)
@@ -119,6 +134,7 @@ void Server::run()
 			pfd.fd = it->first;
 			pfd.events = POLLIN;
 			pfd.revents = 0;
+			nbrPoll++;
 			fds.push_back(pfd);
 		}
 		if (fds.empty())
@@ -132,6 +148,15 @@ void Server::run()
 			std::cerr << "poll() failed: " << strerror(errno) << std::endl;
 			break;
 		}
-		acceptSocket(static_cast<int>(fds.size()), connect, fds);
+		for (size_t i = 0; i < fds.size(); i++)
+		{
+			if (fds[i].revents & POLLIN)
+			{
+				if (isListener(this->_listeners, fds[i].fd))
+					acceptSocket(fds[i].fd);
+				else
+					readClient(fds[i].fd);
+			}
+		}
 	}
 }

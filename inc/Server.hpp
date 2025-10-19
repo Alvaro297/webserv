@@ -35,7 +35,8 @@ private:
 	void initSockets(); //Inicializar sockets (Rellena _listeners) -Falta
 	void closeSockets(); //Cierra los sockets (No todos) -Falta
 	void createListener(const ServerConfig& config, const std::string& fullhost);
-	void acceptSocket(int nbrPoll, int connect, pollfd *fds);
+	void acceptSocket(int fd);
+	void readClient(int fd);
 public:
 	Server();
 	Server(std::vector<ServerConfig>& servers);
