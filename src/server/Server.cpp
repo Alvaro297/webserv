@@ -77,7 +77,23 @@ void Server::initSockets()
 
 void Server::readClient(int fds)
 {
-	(void) fds;
+	std::vector<char> buffer(4096);
+	int bytes = recv(fds, buffer.data(), buffer.size(), 0);
+
+	if (bytes > 0)
+	{
+		this->_client[fds].appendReadBuffer(buffer.data());
+		//\r\n\r\n
+		//Falta mirar el final de los Headers luego pasarselo a Dani
+	}
+	else if (bytes == 0)
+	{
+		this->_client[fds].~Client();
+		this->_client.erase(fds);
+	}
+	else
+		throw ConnexionException();
+	std::cout << bytes;
 }
 
 

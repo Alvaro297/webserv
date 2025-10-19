@@ -45,6 +45,12 @@ public:
 
 	void run(); //Escuchar (Bucle infinito) -Falta
 	void stop(); //Parar la escucha -Falta
+
+	class ConnexionException : public std::exception
+	{
+		public:
+			const char* what() const throw() { return "Error in the conexion client server"; };
+	};
 };
 
 
