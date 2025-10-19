@@ -13,11 +13,14 @@ int main(int argc, char** argv)
 	}
 	
 	std::vector<ServerConfig> servers = ConfigParser::RunParser(argv[1]);
+	// Imprimir la configuración cargada para verificar que el parser y printConfig funcionan
+	for (size_t i = 0; i < servers.size(); ++i) {
+		std::cout << "=== Server " << i << " ===" << std::endl;
+		servers[i].printConfig();
+	}
+
+	// Crear el servidor y arrancarlo (run() es bloqueante)
 	Server server(servers);
 	server.run();
-	for (size_t i = 0; i < servers.size(); ++i) {
-		servers[i].printConfig();
-		std::cout << std::endl;
-	}
 	return 0;
 }

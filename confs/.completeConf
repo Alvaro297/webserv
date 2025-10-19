@@ -1,0 +1,145 @@
+# =========================
+# Webserv - ejemplo .conf
+# =========================
+
+# --- Sitio 1: www.ejemplo.local en 127.0.0.1:8080 (default) y :8081 ---
+server {
+    listen 127.0.0.1:8080 default_server;
+    listen 127.0.0.1:8081;
+    server_name www.ejemplo.local ejemplo.local;
+
+    # Root por defecto del sitio
+    root /var/www/ejemplo;
+
+    # Páginas de error
+    error_page 400 /var/www/ejemplo/errors/400.html;
+    error_page 403 /var/www/ejemplo/errors/403.html;
+    error_page 404 /var/www/ejemplo/errors/404.html;
+    error_page 405 /var/www/ejemplo/errors/405.html;
+    error_page 413 /var/www/ejemplo/errors/413.html;
+    error_page 500 /var/www/ejemplo/errors/500.html;
+    error_page 502 /var/www/ejemplo/errors/502.html;
+    error_page 504 /var/www/ejemplo/errors/504.html;
+
+    # Tamaño máximo de body (p.ej. 10 MiB)
+    client_max_body_size 10m;
+
+    # Comportamiento por defecto en directorios
+    autoindex off;
+    index index.html index.htm;
+
+    # Subidas por defecto deshabilitadas; si se activan, irán aquí:
+    upload_store /var/www/ejemplo/uploads;
+
+    # CGI globales disponibles en el sitio
+    cgi_extension .php /usr/bin/php-cgi;
+    cgi_extension .py  /usr/bin/python3;
+
+    # ---- Rutas ----
+
+    # 1) Raíz: solo GET/HEAD; sirve archivos estáticos desde /var/www/ejemplo
+    location / {
+        methods GET HEAD;
+        # hereda root, autoindex e index del bloque server
+    }
+
+    # 2) Redirección de HTTP -> otra URL (por ejemplo mover /docs a /manual)
+    location /docs {
+        return 301 https://docs.ejemplo.local/;
+        # No se evaluarán más directivas en esta location si se usa return
+    }
+
+    # 3) Prefijo /static con autoindex permitido
+    location /static {
+        methods GET HEAD;
+        root /var/www/ejemplo/static;
+        autoindex on;            # permite listar directorios
+        index index.html;        # si existe, se sirve antes de autoindex
+    }
+
+    # 4) Subidas: habilitadas en /upload solo para POST/PUT
+    location /upload {
+        methods POST PUT;
+        upload_enable on;
+        upload_store /var/www/ejemplo/uploads;  # sobreescribe si quisieras
+        # Respuesta recomendada de tu server:
+        # - 201 Created con Location: /uploads/<nombre> si creas recurso nuevo
+        # - 204 No Content si sobreescribes sin contenido de vuelta
+    }
+
+    # 5) API con métodos concretos
+    location /api {
+        methods GET POST DELETE;
+        root /var/www/ejemplo/api;  # donde residen handlers estáticos o CGI
+        # Si usas CGI para /api/*.py, habilítalo:
+        cgi_enable on;
+        cgi_extension .py /usr/bin/python3;  # (puede heredarse del server)
+        # Tu servidor decide: si /api/users.py existe => ejecutar como CGI.
+    }
+
+    # 6) Sitio dinámico PHP (CGI) en /app
+    location /app {
+        methods GET POST;
+        root /var/www/ejemplo/app;
+        index index.php index.html;  # primero intenta index.php (CGI)
+        cgi_enable on;
+        cgi_extension .php /usr/bin/php-cgi;
+    }
+
+    # 7) Recurso solo-borrado (DELETE)
+    location /tmp {
+        methods DELETE;
+        root /tmp/www;
+        autoindex off;
+    }
+}
+
+# --- Sitio 2: blog.ejemplo.local en 0.0.0.0:8080 ---
+server {
+    listen 0.0.0.0:8080;
+    server_name blog.ejemplo.local;
+
+    root /srv/blog;
+    index index.html;
+    autoindex off;
+    client_max_body_size 2m;
+
+    error_page 404 /srv/blog/errors/404.html;
+
+    # Redirección de todo el sitio a HTTPS canónico (ejemplo)
+    location / {
+        return 302 https://blog.ejemplo.local$request_uri;
+    }
+}
+
+# --- Sitio 3: pruebas CGI Python en 127.0.0.1:9090 ---
+server {
+    listen 127.0.0.1:9090;
+    server_name cgi.local;
+
+    root /var/www/cgi-bin;
+    index index.py index.html;
+    autoindex off;
+
+    # CGI obligatorio: Python
+    cgi_extension .py /usr/bin/python3;
+
+    location / {
+        methods GET POST;
+        cgi_enable on;     # ejecuta *.py como CGI
+    }
+
+    # Directorio público con listados
+    location /pub {
+        methods GET;
+        root /var/www/publico;
+        autoindex on;
+    }
+
+    # Endpoint de subida
+    location /subidas {
+        methods POST;
+        upload_enable on;
+        upload_store /var/www/subidas;
+    }
+}

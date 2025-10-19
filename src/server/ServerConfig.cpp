@@ -111,5 +111,55 @@ void ServerConfig::printConfig() const
 		std::cout << index[i];
 		if (i < index.size() - 1) std::cout << ", ";
 	}
-	std::cout << std::endl << std::endl;
+	std::cout << std::endl;
+
+	// Extended options
+	std::cout << "  Locations:" << std::endl;
+	for (size_t i = 0; i < locations.size(); ++i) {
+		const LocationConfigStruct &loc = locations[i];
+		std::cout << "    - Path: " << loc.path << std::endl;
+		std::cout << "      Methods: ";
+		for (size_t m = 0; m < loc.methods.size(); ++m) {
+			std::cout << loc.methods[m];
+			if (m < loc.methods.size() - 1) std::cout << ", ";
+		}
+		std::cout << std::endl;
+		std::cout << "      Root: " << loc.root << std::endl;
+		std::cout << "      Autoindex: " << (loc.autoindex ? "on" : "off") << std::endl;
+		std::cout << "      Index files: ";
+		for (size_t x = 0; x < loc.index.size(); ++x) {
+			std::cout << loc.index[x];
+			if (x < loc.index.size() - 1) std::cout << ", ";
+		}
+		std::cout << std::endl;
+		std::cout << "      Upload enabled: " << (loc.upload_enable ? "yes" : "no") << std::endl;
+		if (loc.upload_enable) std::cout << "      Upload store: " << loc.upload_store << std::endl;
+		std::cout << "      CGI enabled: " << (loc.cgi_enable ? "yes" : "no") << std::endl;
+		if (!loc.cgi_extensions.empty()) {
+			std::cout << "      CGI extensions:" << std::endl;
+			for (std::map<std::string, std::string>::const_iterator it = loc.cgi_extensions.begin(); it != loc.cgi_extensions.end(); ++it) {
+				std::cout << "        " << it->first << " -> " << it->second << std::endl;
+			}
+		}
+		if (loc.return_code != 0) std::cout << "      Return: " << loc.return_code << " " << loc.return_url << std::endl;
+	}
+
+	std::cout << "  Error pages:" << std::endl;
+	for (std::map<int, std::string>::const_iterator it = error_pages.begin(); it != error_pages.end(); ++it) {
+		std::cout << "    " << it->first << " -> " << it->second << std::endl;
+	}
+
+	std::cout << "  Client max body size: " << client_max_body_size << std::endl;
+	std::cout << "  Autoindex: " << (autoindex ? "on" : "off") << std::endl;
+	std::cout << "  Upload enabled: " << (upload_enable ? "yes" : "no") << std::endl;
+	if (upload_enable) std::cout << "  Upload store: " << upload_store << std::endl;
+	std::cout << "  CGI enabled: " << (cgi_enable ? "yes" : "no") << std::endl;
+	if (!cgi_extensions.empty()) {
+		std::cout << "  CGI extensions:" << std::endl;
+		for (std::map<std::string, std::string>::const_iterator it = cgi_extensions.begin(); it != cgi_extensions.end(); ++it) {
+			std::cout << "    " << it->first << " -> " << it->second << std::endl;
+		}
+	}
+
+	std::cout << std::endl;
 }

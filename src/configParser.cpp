@@ -4,6 +4,7 @@
 #include <sstream>
 #include <cctype>
 #include <iostream>
+#include <cstdlib>
 
 
 std::string ConfigParser::s_lastError;
@@ -52,17 +53,95 @@ bool ConfigParser::fillServer(const std::string& block, ServerConfigStruct& serv
 		else if (key == "port") {
 			lineStream >> server.port;
 		}
+		else if (key == "listen") {
+			// listen may be "host:port" or simply "port"
+			std::string listenVal;
+			lineStream >> listenVal;
+			size_t colon = listenVal.find(":");
+			if (colon != std::string::npos) {
+				std::string lhost = listenVal.substr(0, colon);
+				int lport = std::atoi(listenVal.substr(colon + 1).c_str());
+				server.listens.push_back(std::make_pair(lhost, lport));
+			} else {
+				int lport = std::atoi(listenVal.c_str());
+				server.listens.push_back(std::make_pair(std::string("0.0.0.0"), lport));
+			}
+		}
 		else if (key == "root") {
 			lineStream >> server.root;
 		}
 		else if (key == "server_name") {
 			lineStream >> server.server_name;
 		}
+		else if (key == "error_page") {
+			int code; std::string path;
+			lineStream >> code >> path;
+			server.error_pages[code] = path;
+		}
+		else if (key == "client_max_body_size") {
+			std::string sizeStr; lineStream >> sizeStr;
+			// support suffixes like 10m, 2k
+			size_t mult = 1;
+			if (!sizeStr.empty()) {
+				char suffix = sizeStr[sizeStr.size()-1];
+				if (suffix == 'k' || suffix == 'K') { mult = 1024; sizeStr = sizeStr.substr(0, sizeStr.size()-1); }
+				else if (suffix == 'm' || suffix == 'M') { mult = 1024*1024; sizeStr = sizeStr.substr(0, sizeStr.size()-1); }
+			}
+			server.client_max_body_size = std::atoi(sizeStr.c_str()) * mult;
+		}
+		else if (key == "autoindex") {
+			std::string val; lineStream >> val; server.autoindex = (val == "on" || val == "true");
+		}
+		else if (key == "upload_store") {
+			lineStream >> server.upload_store;
+		}
+		else if (key == "upload_enable") {
+			std::string val; lineStream >> val; server.upload_enable = (val == "on" || val == "true");
+		}
+		else if (key == "cgi_extension") {
+			std::string ext, bin;
+			lineStream >> ext >> bin;
+			server.cgi_extensions[ext] = bin;
+		}
+		else if (key == "cgi_enable") {
+			std::string val; lineStream >> val; server.cgi_enable = (val == "on" || val == "true");
+		}
 		else if (key == "index") {
 			server.index.clear();
 			std::string indexFile;
 			while (lineStream >> indexFile) {
 				server.index.push_back(indexFile);
+			}
+		}
+		else if (key == "location") {
+			// read until '{' to find path, then extract inner block until matching '}'
+			std::string path;
+			lineStream >> path;
+			// We need to find the block start position in the original block string. Simplest approach: find "location <path>" and then extract between braces.
+			std::string marker = "location ";
+			size_t pos = block.find(marker + path);
+			if (pos != std::string::npos) {
+				size_t bracePos = block.find('{', pos);
+				if (bracePos != std::string::npos) {
+					size_t innerStart = bracePos + 1;
+					size_t innerEnd = innerStart;
+					int braceCount = 1;
+					while (innerEnd < block.length() && braceCount > 0) {
+						if (block[innerEnd] == '{') braceCount++;
+						else if (block[innerEnd] == '}') braceCount--;
+						innerEnd++;
+					}
+					if (braceCount == 0) {
+						std::string inner = block.substr(innerStart, innerEnd - innerStart - 1);
+						LocationConfigStruct loc;
+						loc.path = path;
+						if (!fillLocation(inner, loc)) {
+							s_lastError = "Error parsing location: " + path;
+							return false;
+						}
+						server.locations.push_back(loc);
+					}
+				}
 			}
 		}
 	}
@@ -149,6 +228,51 @@ std::vector<ServerConfig> ConfigParser::RunParser(const char * config_file)
 		std::cerr << e.what() << '\n';
 		return std::vector<ServerConfig>(); // Return empty vector on error
 	}
+}
+
+
+
+// Definition added to match declaration in header
+bool ConfigParser::fillLocation(const std::string& block, LocationConfigStruct& location) {
+	std::istringstream iss(block);
+	std::string line;
+	while (std::getline(iss, line)) {
+		size_t start = line.find_first_not_of(" \t\r\n");
+		if (start == std::string::npos) continue;
+		size_t end = line.find_last_not_of(" \t\r\n");
+		line = line.substr(start, end - start + 1);
+	if (line.empty() || line[0] == '#') continue;
+	if (!line.empty() && line[line.length() - 1] == ';') line.erase(line.size() - 1);
+
+		std::istringstream ls(line);
+		std::string key;
+		ls >> key;
+
+		if (key == "methods") {
+			location.methods.clear();
+			std::string m;
+			while (ls >> m) location.methods.push_back(m);
+		} else if (key == "root") {
+			ls >> location.root;
+		} else if (key == "autoindex") {
+			std::string val; ls >> val; location.autoindex = (val == "on" || val == "true");
+		} else if (key == "index") {
+			location.index.clear(); std::string idx; while (ls >> idx) location.index.push_back(idx);
+		} else if (key == "upload_enable") {
+			std::string val; ls >> val; location.upload_enable = (val == "on" || val == "true");
+		} else if (key == "upload_store") {
+			ls >> location.upload_store;
+		} else if (key == "cgi_extension") {
+			std::string ext, bin; ls >> ext >> bin; if (!ext.empty()) location.cgi_extensions[ext] = bin;
+		} else if (key == "cgi_enable") {
+			std::string val; ls >> val; location.cgi_enable = (val == "on" || val == "true");
+		} else if (key == "return") {
+			int code = 0; std::string url; ls >> code >> url; location.return_code = code; location.return_url = url;
+		} else {
+			// Unknown directive: ignore for now
+		}
+	}
+	return true;
 }
 
 
