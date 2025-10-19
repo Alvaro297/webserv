@@ -8,11 +8,14 @@
 # include <unistd.h>
 # include <cerrno>
 # include <sstream>
+# include <fcntl.h>
+# include "Client.hpp"
 # include <sys/socket.h>
 # include <netinet/in.h>
 # include <arpa/inet.h>
 # include <netinet/in.h> // For sockaddr_in
 # include <poll.h>
+
 
 struct Listeners
 {
@@ -27,11 +30,13 @@ class Server
 private:
 	std::vector<ServerConfig>	_servers;
 	std::map<std::string,Listeners>	_listeners; //Host:puerto y listener fd
+	std::map<int, Client> _client;
 
 	void initSockets(); //Inicializar sockets (Rellena _listeners) -Falta
 	void closeSockets(); //Cierra los sockets (No todos) -Falta
 	void createListener(const ServerConfig& config, const std::string& fullhost);
-	void acceptSocket(int nbrPoll, int connect, pollfd *fds);
+	void acceptSocket(int fd);
+	void readClient(int fd);
 public:
 	Server();
 	Server(std::vector<ServerConfig>& servers);

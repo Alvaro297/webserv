@@ -8,7 +8,8 @@ OBJ_DIR  := obj
 SRCS := main.cpp \
         configParser.cpp \
         server/ServerConfig.cpp \
-        server/Server.cpp
+        server/Server.cpp \
+		server/Client.cpp \
 
 SRCS := $(addprefix $(SRC_DIR)/, $(SRCS))
 OBJS := $(addprefix $(OBJ_DIR)/, $(SRCS:$(SRC_DIR)/%.cpp=%.o))
