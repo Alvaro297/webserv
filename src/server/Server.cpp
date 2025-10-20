@@ -75,14 +75,47 @@ void Server::initSockets()
 	}
 }
 
+static bool lineFinish(std::string& line)
+{
+	bool isLineFinish = false, isCr = false;
+	std::string newLine = "";
+	char c;
+	for (size_t i = 0; i < line.size(); ++i)
+	{
+		c = line[i];
+		if (c == 13)
+		{
+			isCr = true;
+			continue;
+		}
+		else if (c == 10 && isCr)
+		{
+			isLineFinish = true;
+			break;
+		}
+		isCr = false;
+		newLine.push_back(c);
+	}
+	line = newLine;
+	return isLineFinish;
+}
+
 void Server::readClient(int fds)
 {
 	std::vector<char> buffer(4096);
 	int bytes = recv(fds, buffer.data(), buffer.size(), 0);
-
+	std::string line;
 	if (bytes > 0)
 	{
-		this->_client[fds].appendReadBuffer(buffer.data());
+		line = std::string(buffer.data(), bytes);
+		
+		if (!lineFinish(line))
+		{
+			this->_client[fds].appendReadBuffer(line);
+			readClient(fds);
+		}
+		//else
+			//PersonaB->Dani
 		//\r\n\r\n
 		//Falta mirar el final de los Headers luego pasarselo a Dani
 	}
