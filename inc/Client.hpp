@@ -35,6 +35,8 @@ public:
 	// Setters
 	void appendReadBuffer(const std::string& data);
 	void appendWriteBuffer(const std::string& data);
+	void clearReadBuffer();
+	void clearWriteBuffer();
 };
 
 #endif

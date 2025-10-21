@@ -32,8 +32,8 @@ Estructura de código lista.
 Persona	Tareas
 A	- Convertir el servidor a no bloqueante.
 **- Implementar poll() o kqueue() para manejar varios clientes.**
-- Crear clase Client con buffer de lectura/escritura.
-- Enviar datos a B (interfaz de lectura de request).
+**- Crear clase Client con buffer de lectura/escritura.**
+**- Enviar datos a B (interfaz de lectura de request).**
 B	- Completar parsing HTTP: método, headers, body, versión.
 - Implementar GET correctamente con rutas.
 - Crear respuestas dinámicas con headers y códigos (200, 404, etc.).

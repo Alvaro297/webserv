@@ -1,8 +1,6 @@
 #include "../../inc/Client.hpp"
 
-Client::Client() : fd(-1), readBuffer(""), writeBuffer("")
-{
-}
+Client::Client() : fd(-1), readBuffer(""), writeBuffer("") {}
 
 Client::Client(int client_fd) : fd(client_fd), readBuffer(""), writeBuffer("")
 {
@@ -30,27 +28,16 @@ Client::~Client()
 	}
 }
 
-int Client::getFd() const
-{
-	return fd;
-}
+int Client::getFd() const { return fd; }
 
-const std::string& Client::getReadBuffer() const
-{
-	return readBuffer;
-}
+const std::string& Client::getReadBuffer() const { return readBuffer; }
 
-const std::string& Client::getWriteBuffer() const
-{
-	return writeBuffer;
-}
+const std::string& Client::getWriteBuffer() const { return writeBuffer; }
 
-void Client::appendReadBuffer(const std::string& data)
-{
-	readBuffer.append(data);
-}
+void Client::appendReadBuffer(const std::string& data) { readBuffer.append(data); }
 
-void Client::appendWriteBuffer(const std::string& data)
-{
-	writeBuffer.append(data);
-}
+void Client::appendWriteBuffer(const std::string& data) { writeBuffer.append(data); }
+
+void Client::clearReadBuffer() { this->readBuffer.clear(); }
+
+void Client::clearWriteBuffer() { this->writeBuffer.clear(); }

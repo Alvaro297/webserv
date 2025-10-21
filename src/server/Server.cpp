@@ -75,29 +75,13 @@ void Server::initSockets()
 	}
 }
 
-static bool lineFinish(std::string& line)
+static bool lineFinish(std::string line)
 {
-	bool isLineFinish = false, isCr = false;
-	std::string newLine = "";
-	char c;
-	for (size_t i = 0; i < line.size(); ++i)
-	{
-		c = line[i];
-		if (c == 13)
-		{
-			isCr = true;
-			continue;
-		}
-		else if (c == 10 && isCr)
-		{
-			isLineFinish = true;
-			break;
-		}
-		isCr = false;
-		newLine.push_back(c);
-	}
-	line = newLine;
-	return isLineFinish;
+	std::string eof = "\r\n\r\n";
+
+	if (line.find(eof) != std::string::npos)
+		return true;
+	return false;
 }
 
 void Server::readClient(int fds)
@@ -108,20 +92,19 @@ void Server::readClient(int fds)
 	if (bytes > 0)
 	{
 		line = std::string(buffer.data(), bytes);
-		
+		this->_client[fds].appendReadBuffer(line);
+		line = this->_client[fds].getReadBuffer();
 		if (!lineFinish(line))
+			return ;
+		else
 		{
-			this->_client[fds].appendReadBuffer(line);
-			readClient(fds);
-		}
-		//else
 			//PersonaB->Dani
-		//\r\n\r\n
-		//Falta mirar el final de los Headers luego pasarselo a Dani
+			this->_client[fds].clearReadBuffer();
+		}
 	}
 	else if (bytes == 0)
 	{
-		this->_client[fds].~Client();
+		close(fds);
 		this->_client.erase(fds);
 	}
 	else
@@ -147,7 +130,7 @@ void Server::acceptSocket(int fds)
 	std::cout << "Activity detected on fd: " << fds << std::endl;
 }
 
-bool isListener(std::map<std::string, Listeners> _listeners, int fdListener)
+static bool isListener(std::map<std::string, Listeners> _listeners, int fdListener)
 {
 	for (std::map<std::string, Listeners>::iterator it = _listeners.begin();
 			 it != _listeners.end(); ++it)
@@ -160,7 +143,7 @@ bool isListener(std::map<std::string, Listeners> _listeners, int fdListener)
 
 void Server::run()
 {
-	int ready, nbrPoll = 0;
+	int ready;
 	struct pollfd tmp;
 
 	//Loop principal
@@ -174,7 +157,6 @@ void Server::run()
 			tmp.fd = it->second.fd;
 			tmp.events = POLLIN;
 			tmp.revents = 0;
-			nbrPoll++;
 			fds.push_back(tmp);
 		}
 		for (std::map<int,Client>::iterator it = _client.begin(); it != _client.end(); ++it)
@@ -183,7 +165,6 @@ void Server::run()
 			pfd.fd = it->first;
 			pfd.events = POLLIN;
 			pfd.revents = 0;
-			nbrPoll++;
 			fds.push_back(pfd);
 		}
 		if (fds.empty())
