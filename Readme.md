@@ -30,7 +30,8 @@ Estructura de código lista.
 
 📆 Semana 2 — HTTP funcional
 Persona	Tareas
-A	- Convertir el servidor a no bloqueante.
+A
+**- Convertir el servidor a no bloqueante.**
 **- Implementar poll() o kqueue() para manejar varios clientes.**
 **- Crear clase Client con buffer de lectura/escritura.**
 **- Enviar datos a B (interfaz de lectura de request).**
@@ -47,7 +48,8 @@ Configuración personalizada funciona.
 
 📆 Semana 3 — Métodos y CGI
 Persona	Tareas
-A	- Pulir gestión de sockets (timeouts, cierres limpios).
+A
+- Pulir gestión de sockets (timeouts, cierres limpios).
 - Añadir control de eventos de lectura/escritura.
 - Estabilizar el bucle principal.
 B	- Implementar POST y DELETE.

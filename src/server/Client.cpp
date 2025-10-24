@@ -40,3 +40,24 @@ void Client::appendWriteBuffer(const std::string& data) { writeBuffer.append(dat
 void Client::clearReadBuffer() { this->readBuffer.clear(); }
 
 void Client::clearWriteBuffer() { this->writeBuffer.clear(); }
+
+bool Client::writeClient()
+{
+	if (this->getWriteBuffer().empty())
+		return true;
+	else
+	{
+		ssize_t bytes_send = send(this->fd, this->getWriteBuffer().c_str(), this->getWriteBuffer().length(), MSG_NOSIGNAL);
+		if (bytes_send > 0)
+			this->writeBuffer.erase(0, bytes_send);
+		else if (bytes_send < 0)
+		{
+			if (errno != EAGAIN && errno != EWOULDBLOCK)
+			{
+				std::cerr << "send() failed: " << strerror(errno) << std::endl;
+				return false;
+			}
+		}
+	}
+	return true;
+}

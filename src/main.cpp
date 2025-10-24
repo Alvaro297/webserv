@@ -18,7 +18,6 @@ int main(int argc, char** argv)
 		std::cout << "=== Server " << i << " ===" << std::endl;
 		servers[i].printConfig();
 	}
-
 	Server server(servers);
 	server.run();
 	return 0;

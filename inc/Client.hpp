@@ -38,6 +38,7 @@ public:
 	void appendWriteBuffer(const std::string& data);
 	void clearReadBuffer();
 	void clearWriteBuffer();
+	bool writeClient();
 };
 
 #endif

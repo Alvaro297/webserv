@@ -29,10 +29,12 @@ void Server::processRequest(int fd, const std::string& fullBuffer)
 	std::cout << fullBuffer << std::endl;
 	std::cout << "======================================" << std::endl;
 	
+	std::string response;
 	// TODO: Cuando Dani tenga el parser, llamarlo aquí
 	// Request req = HTTPParser::parse(fullBuffer);
 	// Response resp = handleRequest(req);
 	// sendResponse(fd, resp);
+	this->_client[fd].appendWriteBuffer(response);
 }
 
 void Server::createListener(const ServerConfig& config, const std::string& fullhost)
@@ -192,6 +194,8 @@ void Server::run()
 			struct pollfd pfd;
 			pfd.fd = it->first;
 			pfd.events = POLLIN;
+			if (!it->second.getWriteBuffer().empty())
+				pfd.events |= POLLOUT;
 			pfd.revents = 0;
 			fds.push_back(pfd);
 		}
@@ -214,6 +218,16 @@ void Server::run()
 					acceptSocket(fds[i].fd);
 				else
 					readClient(fds[i].fd);
+			}
+			if (fds[i].revents & POLLOUT)
+			{
+				bool success = this->_client[fds[i].fd].writeClient();
+				if (!success)
+				{
+					std::cerr << "Error writing to client " << fds[i].fd << std::endl;
+					close(fds[i].fd);
+					this->_client.erase(fds[i].fd);
+				}
 			}
 		}
 	}
