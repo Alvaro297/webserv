@@ -24,6 +24,7 @@ private:
 public:
 	Client();
 	Client(int fd);
+	Client(const Client& other);  // Constructor de copia
 	Client& operator=(const Client& other);
 	~Client();
 

@@ -19,7 +19,6 @@ int main(int argc, char** argv)
 		servers[i].printConfig();
 	}
 
-	// Crear el servidor y arrancarlo (run() es bloqueante)
 	Server server(servers);
 	server.run();
 	return 0;

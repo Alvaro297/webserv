@@ -23,6 +23,18 @@ Server& Server::operator=(const Server& other)
 
 Server::~Server() {}
 
+void Server::processRequest(int fd, const std::string& fullBuffer)
+{
+	std::cout << "=== Request completa recibida de fd " << fd << " ===" << std::endl;
+	std::cout << fullBuffer << std::endl;
+	std::cout << "======================================" << std::endl;
+	
+	// TODO: Cuando Dani tenga el parser, llamarlo aquí
+	// Request req = HTTPParser::parse(fullBuffer);
+	// Response resp = handleRequest(req);
+	// sendResponse(fd, resp);
+}
+
 void Server::createListener(const ServerConfig& config, const std::string& fullhost)
 {
 	Listeners	listener;
@@ -34,6 +46,14 @@ void Server::createListener(const ServerConfig& config, const std::string& fullh
 		std::cerr << "socket() failed for " << fullhost << ": " << strerror(errno) << std::endl;
 		return;
 	}
+	
+	// Permitir reutilizar el puerto inmediatamente después de cerrar el servidor
+	int opt = 1;
+	if (setsockopt(fdSocket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
+	{
+		std::cerr << "setsockopt(SO_REUSEADDR) failed: " << strerror(errno) << std::endl;
+	}
+	
 	fcntl(fdSocket, F_SETFL, O_NONBLOCK);
 	listener.connect.sin_family = AF_INET;
 	listener.connect.sin_port = htons(config.getPort());
@@ -62,7 +82,6 @@ void Server::initSockets()
 
 	for (size_t i = 0; i < this->_servers.size(); i++)
 	{
-		// Convert port to string (C++98 compatible)
 		std::stringstream ss;
 		ss << _servers[i].getPort();
 		fullhost = _servers[i].getHost() + ":" + ss.str();
@@ -88,28 +107,34 @@ void Server::readClient(int fds)
 {
 	std::vector<char> buffer(4096);
 	int bytes = recv(fds, buffer.data(), buffer.size(), 0);
+	
 	std::string line;
 	if (bytes > 0)
 	{
-		line = std::string(buffer.data(), bytes);
-		this->_client[fds].appendReadBuffer(line);
+		std::string chunk(buffer.data(), bytes);
+		this->_client[fds].appendReadBuffer(chunk);
 		line = this->_client[fds].getReadBuffer();
-		if (!lineFinish(line))
-			return ;
-		else
+		if (lineFinish(line))
 		{
-			//PersonaB->Dani
+			processRequest(fds, line);
 			this->_client[fds].clearReadBuffer();
 		}
 	}
 	else if (bytes == 0)
 	{
+		std::cout << "Cliente fd " << fds << " desconectado" << std::endl;
 		close(fds);
 		this->_client.erase(fds);
 	}
-	else
-		throw ConnexionException();
-	std::cout << bytes;
+	else  // bytes < 0
+	{
+		if (errno != EAGAIN)
+		{
+			std::cerr << "recv() failed: " << strerror(errno) << std::endl;
+			close(fds);
+			this->_client.erase(fds);
+		}
+	}
 }
 
 
@@ -126,8 +151,11 @@ void Server::acceptSocket(int fds)
 		return ;
 	}
 	fcntl(connect, F_SETFL, O_NONBLOCK);
-	this->_client[connect] = Client(connect);
-	std::cout << "Activity detected on fd: " << fds << std::endl;
+	
+	// Insertar directamente en el map sin crear objeto por defecto
+	this->_client.insert(std::make_pair(connect, Client(connect)));
+	
+	std::cout << "Nueva conexión aceptada: fd=" << connect << " (listener=" << fds << ")" << std::endl;
 }
 
 static bool isListener(std::map<std::string, Listeners> _listeners, int fdListener)

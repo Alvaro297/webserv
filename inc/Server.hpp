@@ -37,6 +37,8 @@ private:
 	void createListener(const ServerConfig& config, const std::string& fullhost);
 	void acceptSocket(int fd);
 	void readClient(int fd);
+	void processRequest(int fd, const std::string& fullBuffer);
+
 public:
 	Server();
 	Server(std::vector<ServerConfig>& servers);

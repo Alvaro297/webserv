@@ -7,6 +7,11 @@ Client::Client(int client_fd) : fd(client_fd), readBuffer(""), writeBuffer("")
 	std::cout << "Client created with fd: " << fd << std::endl;
 }
 
+Client::Client(const Client& other) : fd(other.fd), readBuffer(other.readBuffer), writeBuffer(other.writeBuffer)
+{
+	std::cout << "Client copy constructor (fd: " << fd << ")" << std::endl;
+}
+
 Client& Client::operator=(const Client& other)
 {
 	if (this != &other)
@@ -20,12 +25,6 @@ Client& Client::operator=(const Client& other)
 
 Client::~Client()
 {
-	if (fd >= 0)
-	{
-		std::cout << "Closing client fd: " << fd << std::endl;
-		close(fd);
-		fd = -1;
-	}
 }
 
 int Client::getFd() const { return fd; }
