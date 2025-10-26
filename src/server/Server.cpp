@@ -2,6 +2,7 @@
 #include "../../inc/ServerConfig.hpp"
 #include "../../inc/Client.hpp"
 
+static volatile sig_atomic_t g_shutdown = 0;
 
 Server::Server(std::vector<ServerConfig>& server)
 {
@@ -170,14 +171,37 @@ static bool isListener(std::map<std::string, Listeners> _listeners, int fdListen
 	return false;
 }
 
+static void signalHandler(int signum)
+{
+	(void)signum;
+	g_shutdown = 1;
+}
+
+void Server::closeServer()
+{
+	for (std::map<std::string,Listeners>::iterator it = _listeners.begin(); it != _listeners.end();)
+	{
+		if (it->second.fd)
+			close(it->second.fd);
+		this->_listeners.erase(it++);
+	}
+	for (std::map<int,Client>::iterator it = _client.begin(); it != _client.end();)
+	{
+		if (it->first)
+			close(it->first);
+		this->_client.erase(it++);
+	}
+}
+
 void Server::run()
 {
 	int ready;
 	struct pollfd tmp;
 
 	//Loop principal
+	signal(SIGINT, signalHandler);
 	signal(SIGPIPE, SIG_IGN);
-	while (true)
+	while (!g_shutdown)
 	{
 		std::vector<struct pollfd> fds;
 		fds.clear();
@@ -208,7 +232,7 @@ void Server::run()
 		{
 			time_t now = time(NULL);
 			// Esto es el timeout modificarlo a vuestra medida para si quereis seguir o no (Actualmente en 12 sec)
-			if ((now - it->second.getLastActivity()) > 12)
+			if ((now - it->second.getLastActivity()) > 1200)
 			{
 				std::cout << "Timeout of conexion" << std::endl;
 				close(it->first);
@@ -241,4 +265,5 @@ void Server::run()
 			}
 		}
 	}
+	closeServer();
 }

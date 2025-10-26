@@ -434,4 +434,3 @@ int socket_fd = accept(...);
 // NO HACER: read(socket_fd, ...) directamente
 // CORRECTO: esperar POLLIN con poll()
 ```
-
