@@ -30,10 +30,10 @@ Si terminais algo marcarlo ya sea en negrita con un listo o tachandolo (No lo qu
 - **✅ SO_REUSEADDR para reutilizar puertos**
 
 ### Persona B (HTTP Engine)
-- Diseñar clases Request y Response (headers, body, status code)
-- Entender y resumir RFC 2616 (HTTP/1.1)
-- Implementar parsing básico de una request simple (GET)
-- Definir interfaz entre A y B (cómo recibir raw request)
+- ⏳ Diseñar clases Request y Response (headers, body, status code)
+- ⏳ Entender y resumir RFC 2616 (HTTP/1.1)
+- ⏳ Implementar parsing básico de una request simple (GET)
+- ⏳ Definir interfaz entre A y B (cómo recibir raw request)
 
 ### Persona C (Config + Files)
 - **✅ Crear parser básico de configuración (server { ... })**
@@ -93,22 +93,18 @@ Si terminais algo marcarlo ya sea en negrita con un listo o tachandolo (No lo qu
 - **✅ Manejar SIGPIPE (ignorar, no crashear) - signal(SIGPIPE, SIG_IGN)**
 - **✅ poll() con timeout de 1000ms para chequeos regulares**
 - **✅ lastActivity tracking en Client class**
-- ⏳ Keep-Alive: mantener conexión abierta para múltiples requests
-- ⏳ Detectar Connection: close vs keep-alive
-- ⏳ Estabilizar bucle principal (manejo de errores, logs mejorados)
 
 ### Persona B (HTTP Engine)
 - ⏳ Implementar POST con body completo
 - ⏳ Implementar DELETE (borrado de archivos)
-- ⏳ Chunked Transfer Encoding (lectura y escritura)
-- ⏳ Gestionar uploads de archivos (multipart/form-data básico)
 - ⏳ Validar client_max_body_size
 - ⏳ Implementar códigos de error: 400, 403, 404, 405, 413, 500, 501, 505
 - ⏳ Parsing de Query String (?param=value)
+- ⏳ Gestionar uploads de archivos (multipart/form-data básico)
 
 ### Persona C (Config + CGI)
 - ⏳ Implementar CGIHandler:
-  - Ejecutar scripts (PHP, Python, Perl)
+  - Ejecutar scripts (al menos 1 lenguaje: PHP o Python)
   - fork() + execve() + pipes
   - Leer stdout del proceso CGI
   - Parsear headers CGI (Status:, Content-Type:)
@@ -134,64 +130,63 @@ Si terminais algo marcarlo ya sea en negrita con un listo o tachandolo (No lo qu
 - **✅ Manejar SIGPIPE (ignorar, no crashear)** - ya implementado en Semana 3
 - ⏳ Logs de debug (conexiones, errores, timeouts)
 - **✅ Verificar que poll() se llama solo una vez por iteración** - verificado
+- ⏳ Garantizar que el servidor NUNCA cuelga indefinidamente
 
 ### Persona B (HTTP Engine)
-- ⏳ Revisar conformidad RFC 2616 completa
+- ⏳ Revisar conformidad RFC 2616 (o HTTP/1.0 como referencia)
 - ⏳ Casos edge: headers largos, body vacío, método desconocido
 - ⏳ Validar con navegadores reales (Chrome, Firefox)
 - ⏳ Probar con Postman/Insomnia (POST, DELETE)
 - ⏳ Documentar API interna (cómo añadir métodos nuevos)
 
 ### Persona C (Config + CGI + Files)
-- ⏳ Probar configuración con virtual hosting (múltiples server_name)
 - ⏳ Verificar error_page personalizadas
-- ⏳ Revisar CGI con diferentes extensiones (.php, .py, .pl)
+- ⏳ Revisar CGI con extensión elegida (.php o .py)
 - ⏳ Testear autoindex y permisos
 - ⏳ Documentar formato .conf completo con ejemplos
+- ⏳ Proporcionar archivos de configuración y archivos de prueba
 
 ### Testing conjunto
 - ⏳ Script de tests automatizado (bash + curl)
 - ⏳ 20-30 casos típicos del subject
 - ⏳ Tests de evaluadores anteriores
-- ⏳ Docker compose para entorno reproducible (opcional)
 - ⏳ Preparar defensa: explicar arquitectura, decisiones, manejo de errores
 
 ### 🎯 Objetivo semana 4:
 ⏳ Servidor estable, sin leaks, sin crashes  
 ⏳ Pasa todos los tests del subject  
-⏳ Norminette (si aplica en tu campus)  
 ⏳ Preparado para evaluación
 
 ---
 
-## ✅ Checklist completa del Subject (Mandatory)
+## ✅ Checklist completa del Subject (MANDATORY ONLY)
+
+> **IMPORTANTE:** Esta sección contiene SOLO los requisitos OBLIGATORIOS del subject. Los bonus están en sección separada más abajo.
 
 ### HTTP/1.1 Core
-- [ ] HTTP/1.1 compliant (RFC 2616)
+- [ ] HTTP/1.1 compliant (RFC 2616 como referencia, HTTP/1.0 sugerido pero no obligatorio)
 - [ ] Métodos: GET, POST, DELETE
 - [ ] Response con status code correcto (200, 404, 500, etc.)
 - [ ] Headers de request/response correctos
 - [ ] Manejo de body en POST
 
 ### Configuración
-- [ ] Archivo .conf estilo nginx
-- [ ] Múltiples server blocks
-- [ ] listen (puerto)
-- [ ] server_name (virtual hosting)
-- [ ] root (directorio base)
-- [ ] index (archivos por defecto)
-- [ ] error_page (páginas de error personalizadas)
+- [x] Archivo .conf estilo nginx (Persona C)
+- [x] Múltiples server blocks (Persona C)
+- [x] listen (puerto) (Persona C)
+- [x] root (directorio base) (Persona C)
+- [x] index (archivos por defecto) (Persona C)
+- [x] error_page (páginas de error personalizadas) (Persona C)
 - [ ] client_max_body_size (límite de tamaño)
-- [ ] location blocks con:
-  - root o alias
-  - limit_except (métodos permitidos)
-  - return (redirecciones)
-  - autoindex on/off
+- [x] location blocks con: (Persona C)
+  - [x] root o alias
+  - [ ] limit_except (métodos permitidos)
+  - [ ] return (redirecciones)
+  - [ ] autoindex on/off
+- [ ] **Ejecutable debe tomar [archivo de configuración] como argumento**
+- [ ] **Proporcionar archivos de configuración y archivos de prueba**
 
-### Virtual Hosting
-- [ ] Múltiples server_name en mismo puerto
-- [ ] Elegir server correcto según Host header
-- [ ] Default server si no hay match
+> **Nota del subject sobre Virtual Hosting:** "We deliberately chose to offer only a subset of the HTTP RFC. In this context, the virtual host feature is considered out of scope. But you are allowed to implement it if you want." → **NO ES OBLIGATORIO**
 
 ### Archivos estáticos
 - [ ] Servir archivos HTML, CSS, JS, imágenes
@@ -199,9 +194,10 @@ Si terminais algo marcarlo ya sea en negrita con un listo o tachandolo (No lo qu
 - [ ] Búsqueda de index files
 - [ ] Autoindex (listado de directorio)
 - [ ] Manejo de permisos (403 si no se puede leer)
+- [ ] **Servir una página web completamente estática**
 
-### CGI
-- [ ] Ejecutar CGI con al menos una extensión (.php, .py, .pl)
+### CGI (OBLIGATORIO - al menos 1 tipo)
+- [ ] Ejecutar CGI con al menos una extensión (.php, .py, o .pl)
 - [ ] Variables de entorno CGI correctas:
   - REQUEST_METHOD
   - QUERY_STRING
@@ -210,26 +206,45 @@ Si terminais algo marcarlo ya sea en negrita con un listo o tachandolo (No lo qu
   - PATH_INFO
   - SCRIPT_FILENAME
 - [ ] Pipes stdin/stdout con proceso CGI
-- [ ] Parsear headers que devuelve el CGI
+- [ ] Parsear headers que devuelve el CGI (Status:, Content-Type:, etc.)
 - [ ] Timeout para CGI que se cuelga
+- [ ] **Un-chunking de requests chunked antes de pasar a CGI** (el CGI espera EOF)
+- [ ] **Manejo de respuestas CGI sin Content-Length** (EOF marca el final)
+- [ ] **Ejecutar CGI en el directorio correcto** (para rutas relativas)
+- [ ] **fork() SOLO para CGI** (no para otras cosas)
 
 ### Upload de archivos
 - [ ] POST con multipart/form-data
-- [ ] Guardar archivos en directorio configurado
+- [ ] Clientes pueden subir archivos
+- [ ] Guardar archivos en directorio configurado (o configuración de dónde almacenarlos)
 - [ ] Respetar client_max_body_size
 
-### Non-blocking I/O
-- [x] poll() o select() o kqueue() o epoll()
-- [x] Solo UNA llamada a poll/select/etc. por iteración
-- [x] Non-blocking sockets (fcntl O_NONBLOCK)
-- [x] Manejo correcto de EAGAIN/EWOULDBLOCK
+### Non-blocking I/O (CRÍTICO - SUSPENDES SI NO CUMPLES)
+- [x] poll() o select() o kqueue() o epoll() (Persona A)
+- [x] **Solo UNA llamada a poll/select/etc. por iteración** (Persona A - verificado)
+- [x] Non-blocking sockets (fcntl O_NONBLOCK) (Persona A)
+- [x] Manejo correcto de EAGAIN/EWOULDBLOCK (Persona A)
+- [x] **Nunca leer/escribir en sockets sin pasar por poll()** (Persona A)
+- [ ] **Archivos de disco regulares (open/read/write) NO requieren poll()** (permitido bloqueante)
+- [x] **Monitoring simultáneo de lectura Y escritura** con poll() (Persona A)
+- [x] **El servidor debe permanecer non-blocking en todo momento** (Persona A)
 
-### Robustez
-- [ ] No crashear nunca (stress test con siege/ab)
-- [ ] Sin leaks de memoria (valgrind)
-- [x] Manejo de señales (SIGPIPE ignorado)
-- [x] Timeouts de conexión
-- [ ] Límite de clientes simultáneos (recomendado)
+> **CRÍTICO del subject:** "I/O that can wait for data (sockets, pipes/FIFOs, etc.) must be non-blocking and driven by a single poll() (or equivalent). Calling read/recv or write/send on these descriptors without prior readiness will result in a grade of 0. Regular disk files are exempt."
+
+### Robustez (CRÍTICO)
+- [ ] **No crashear NUNCA** (stress test con siege/ab)
+- [ ] **Sin leaks de memoria** (valgrind)
+- [x] **Manejo de señales** (SIGPIPE ignorado) (Persona A)
+- [x] **Timeouts de conexión** (requests no pueden colgar indefinidamente) (Persona A)
+- [ ] **Servidor disponible en todo momento** (stress test)
+- [ ] **Compatibilidad con navegadores estándar** (Chrome, Firefox, Safari)
+- [ ] **No usar execve() para otro servidor web**
+- [ ] **Manejar correctamente desconexiones de clientes**
+- [ ] **Comprobar valor de errno PROHIBIDO después de read/write**
+
+> **Importante:** "A request to your server should never hang indefinitely."
+
+> **Importante:** "Checking the value of errno to adjust the server behaviour is strictly forbidden after performing a read or write operation."
 
 ### Códigos de error HTTP
 - [ ] 200 OK
@@ -245,23 +260,92 @@ Si terminais algo marcarlo ya sea en negrita con un listo o tachandolo (No lo qu
 - [ ] 500 Internal Server Error
 - [ ] 501 Not Implemented (método no soportado)
 - [ ] 505 HTTP Version Not Supported
+- [ ] **Páginas de error por defecto si no se proporcionan**
+
+### Puertos múltiples
+- [x] **Servidor debe poder escuchar en múltiples puertos** (Persona A + C)
+- [x] **Servir contenido diferente según el puerto** (Persona C - configuración)
 
 ### Compilación y Makefile
 - [x] Flags: -Wall -Wextra -Werror
 - [x] Reglas: all, clean, fclean, re
 - [x] Compila sin warnings
 - [x] C++98 compliant
+- [x] NAME del ejecutable: webserv
+- [ ] **Uso:** `./webserv [configuration file]`
 
 ---
 
-## 📋 Extras recomendados (no obligatorios, mejoran el servidor)
+## 🌟 BONUS PART (Sección oficial del Subject)
+
+> **⚠️ IMPORTANTE:** Los bonus SOLO se evalúan si la parte MANDATORY está PERFECTA. No comiences bonus hasta que TODO lo de arriba esté 100% funcional y testeado sin errores.
+
+> **Nota del subject:** "Here are some additional features you can implement:"
+
+### 1. **Cookies y gestión de sesiones** 🍪
+- [ ] Implementar `Set-Cookie:` en respuestas HTTP
+- [ ] Leer header `Cookie:` en requests
+- [ ] Gestión básica de sesiones (session ID)
+- [ ] **Proporcionar ejemplos simples de uso** (requisito explícito del subject)
+
+**Responsable sugerido:** Persona B (HTTP Engine)
+
+**Dificultad:** Media (3-5 horas)
+
+**Ejemplo práctico requerido:**
+```http
+Response del servidor:
+HTTP/1.1 200 OK
+Set-Cookie: sessionid=abc123; Path=/; HttpOnly
+
+Request siguiente del cliente:
+GET /profile HTTP/1.1
+Cookie: sessionid=abc123
+```
+
+---
+
+### 2. **Múltiples tipos de CGI** 🔧
+- [ ] Soportar **más de un tipo** de CGI (PHP, Python, Perl)
+- [ ] Configuración por extensión (.php, .py, .pl)
+- [ ] Variables de entorno correctas para cada tipo
+- [ ] Tests con scripts reales de cada lenguaje
+
+> **Nota:** El mandatory solo requiere 1 tipo de CGI. Este bonus requiere **múltiples tipos** (al menos 2 o más).
+
+**Responsable sugerido:** Persona C (Config + CGI)
+
+**Dificultad:** Fácil-Media (2-4 horas si ya tienes 1 CGI funcionando)
+
+**Ejemplo de configuración:**
+```nginx
+location ~ \.php$ {
+    cgi_pass /usr/bin/php-cgi;
+}
+location ~ \.py$ {
+    cgi_pass /usr/bin/python3;
+}
+location ~ \.pl$ {
+    cgi_pass /usr/bin/perl;
+}
+```
+
+---
+
+## 📋 Mejoras opcionales (NO son bonus oficiales)
+
+Estas características NO están en el subject como bonus, pero mejoran el servidor. **No las hagas hasta tener mandatory + bonus oficiales perfectos.**
 
 - [ ] Chunked Transfer Encoding (request y response)
-- [ ] Keep-Alive / Persistent connections
-- [ ] Content-Range (partial downloads)
-- [ ] If-Modified-Since (caching básico)
-- [ ] Logs detallados con timestamps
-- [ ] Múltiples lenguajes CGI (PHP + Python + Perl)
+- [ ] Keep-Alive / Persistent connections (Connection: keep-alive)
+- [ ] Content-Range (partial downloads / resume)
+- [ ] If-Modified-Since (caching básico HTTP)
+- [ ] Logs detallados con timestamps estilo nginx
+- [ ] Compression gzip (Accept-Encoding / Content-Encoding)
+- [ ] Autoindex mejorado (HTML bonito con iconos)
+- [ ] Custom error pages mejoradas (variables dinámicas)
+- [ ] Virtual Hosting completo (server_name + Host header)
+- [ ] Límite de clientes simultáneos configurable
 
 ---
 
@@ -292,10 +376,13 @@ Si terminais algo marcarlo ya sea en negrita con un listo o tachandolo (No lo qu
 ## 📚 Recursos útiles
 
 - **RFC 2616 (HTTP/1.1):** https://www.rfc-editor.org/rfc/rfc2616
+- **RFC 1945 (HTTP/1.0):** https://www.rfc-editor.org/rfc/rfc1945 (sugerido como referencia)
 - **Nginx config docs:** https://nginx.org/en/docs/
 - **CGI 1.1 spec:** https://www.rfc-editor.org/rfc/rfc3875
 - **Beej's Guide to Network Programming:** https://beej.us/guide/bgnet/
 - **HTTP status codes:** https://httpstatuses.com/
+
+> **Consejo del subject:** "If you have a question about a specific behaviour, you can compare your program's behaviour with NGINX's."
 
 ---
 
@@ -304,6 +391,47 @@ Si terminais algo marcarlo ya sea en negrita con un listo o tachandolo (No lo qu
 ### "Address already in use"
 ```bash
 sudo pkill -9 webserv
-# O añadir SO_REUSEADDR al socket (ya implementado)
+# O añadir SO_REUSEADDR al socket (ya implementado ✅)
+```
+
+### "poll() debe llamarse solo una vez por iteración"
+```cpp
+// ✅ Correcto:
+while (true) {
+    // preparar fds
+    int ready = poll(&fds[0], fds.size(), timeout);  // UNA sola llamada
+    // procesar eventos
+}
+
+// ❌ Incorrecto (nota 0):
+while (true) {
+    poll(...);  // Primera llamada
+    // ...
+    poll(...);  // Segunda llamada - PROHIBIDO
+}
+```
+
+### "read/write sin poll() previo"
+```cpp
+// ❌ Incorrecto (nota 0):
+recv(fd, buffer, size, 0);  // Sin verificar POLLIN antes
+
+// ✅ Correcto:
+if (fds[i].revents & POLLIN) {
+    recv(fds[i].fd, buffer, size, 0);
+}
+```
+
+### "Archivos de disco vs sockets"
+```cpp
+// ✅ Archivos regulares NO necesitan poll():
+int fd = open("file.html", O_RDONLY);  // Bloqueante OK
+read(fd, buffer, size);                 // Sin poll() OK
+close(fd);
+
+// ❌ Sockets/pipes SÍ necesitan poll():
+int socket_fd = accept(...);
+// NO HACER: read(socket_fd, ...) directamente
+// CORRECTO: esperar POLLIN con poll()
 ```
 
