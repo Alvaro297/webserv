@@ -44,7 +44,7 @@ Si terminais algo marcarlo ya sea en negrita con un listo o tachandolo (No lo qu
 ### 🎯 Objetivo semana 1:
 **✅ Servidor levanta, acepta conexiones y detecta datos**  
 **✅ Estructura de código lista**  
-⏳ Responde "Hello World" básico
+**✅ Responde "Hello World" básico** (hardcoded, esperando parser HTTP de Persona B)
 
 ---
 
@@ -56,10 +56,10 @@ Si terminais algo marcarlo ya sea en negrita con un listo o tachandolo (No lo qu
 - **✅ Crear clase Client con readBuffer/writeBuffer**
 - **✅ Detectar request HTTP completa (\r\n\r\n)**
 - **✅ isListener() para distinguir listeners de clientes**
-- ⏳ Pasar request completa a Persona B (integración pendiente)
-- ⏳ Implementar writeClient() con send() para enviar respuestas
-- ⏳ Limpiar readBuffer después de procesar
-- ⏳ Manejar errores EAGAIN/EWOULDBLOCK correctamente
+- ⏳ Pasar request completa a Persona B (integración pendiente - esperando a Dani)
+- **✅ Implementar writeClient() con send() para enviar respuestas**
+- **✅ Limpiar readBuffer después de procesar**
+- **✅ Manejar errores EAGAIN/EWOULDBLOCK correctamente**
 
 ### Persona B (HTTP Engine)
 - ⏳ Completar parsing HTTP: método, URI, versión, headers, body
@@ -78,9 +78,9 @@ Si terminais algo marcarlo ya sea en negrita con un listo o tachandolo (No lo qu
 - ⏳ Manejar permisos de lectura (403 Forbidden)
 
 ### 🎯 Objetivo semana 2:
-⏳ Servidor puede servir páginas estáticas a múltiples clientes concurrentes  
-⏳ Configuración personalizada funciona  
-⏳ GET funcional con archivos del disco
+**✅ Servidor puede servir páginas estáticas a múltiples clientes concurrentes** (listo para integración con Persona B)
+⏳ Configuración personalizada funciona (depende de Persona C)
+⏳ GET funcional con archivos del disco (depende de Persona B + C)
 
 ---
 
@@ -88,11 +88,14 @@ Si terminais algo marcarlo ya sea en negrita con un listo o tachandolo (No lo qu
 
 ### Persona A (Networking)
 - **✅ Implementar timeouts de conexión (detectar clientes inactivos)**
-- ⏳ Manejar POLLOUT para escritura cuando buffer está lleno
-- ⏳ Gestión limpia de cierres (close() y erase() de _client)
+- **✅ Manejar POLLOUT para escritura cuando buffer está lleno**
+- **✅ Gestión limpia de cierres (close() y erase() de _client) - closeClient() centralizado**
+- **✅ Manejar SIGPIPE (ignorar, no crashear) - signal(SIGPIPE, SIG_IGN)**
+- **✅ poll() con timeout de 1000ms para chequeos regulares**
+- **✅ lastActivity tracking en Client class**
 - ⏳ Keep-Alive: mantener conexión abierta para múltiples requests
 - ⏳ Detectar Connection: close vs keep-alive
-- ⏳ Estabilizar bucle principal (manejo de errores, logs)
+- ⏳ Estabilizar bucle principal (manejo de errores, logs mejorados)
 
 ### Persona B (HTTP Engine)
 - ⏳ Implementar POST con body completo
@@ -128,9 +131,9 @@ Si terminais algo marcarlo ya sea en negrita con un listo o tachandolo (No lo qu
 - ⏳ Revisar fugas de memoria (valgrind --leak-check=full)
 - ⏳ Verificar cierres de sockets (lsof, netstat)
 - ⏳ Testear con siege/ab/wrk (stress test 100+ clientes)
-- ⏳ Manejar SIGPIPE (ignorar, no crashear)
+- **✅ Manejar SIGPIPE (ignorar, no crashear)** - ya implementado en Semana 3
 - ⏳ Logs de debug (conexiones, errores, timeouts)
-- ⏳ Verificar que poll() se llama solo una vez por iteración
+- **✅ Verificar que poll() se llama solo una vez por iteración** - verificado
 
 ### Persona B (HTTP Engine)
 - ⏳ Revisar conformidad RFC 2616 completa
@@ -216,16 +219,16 @@ Si terminais algo marcarlo ya sea en negrita con un listo o tachandolo (No lo qu
 - [ ] Respetar client_max_body_size
 
 ### Non-blocking I/O
-- [ ] poll() o select() o kqueue() o epoll()
-- [ ] Solo UNA llamada a poll/select/etc. por iteración
-- [ ] Non-blocking sockets (fcntl O_NONBLOCK)
-- [ ] Manejo correcto de EAGAIN/EWOULDBLOCK
+- [x] poll() o select() o kqueue() o epoll()
+- [x] Solo UNA llamada a poll/select/etc. por iteración
+- [x] Non-blocking sockets (fcntl O_NONBLOCK)
+- [x] Manejo correcto de EAGAIN/EWOULDBLOCK
 
 ### Robustez
 - [ ] No crashear nunca (stress test con siege/ab)
 - [ ] Sin leaks de memoria (valgrind)
-- [ ] Manejo de señales (SIGPIPE ignorado)
-- [ ] Timeouts de conexión
+- [x] Manejo de señales (SIGPIPE ignorado)
+- [x] Timeouts de conexión
 - [ ] Límite de clientes simultáneos (recomendado)
 
 ### Códigos de error HTTP
@@ -244,10 +247,10 @@ Si terminais algo marcarlo ya sea en negrita con un listo o tachandolo (No lo qu
 - [ ] 505 HTTP Version Not Supported
 
 ### Compilación y Makefile
-- [ ] Flags: -Wall -Wextra -Werror
-- [ ] Reglas: all, clean, fclean, re
-- [ ] Compila sin warnings
-- [ ] C++98 compliant
+- [x] Flags: -Wall -Wextra -Werror
+- [x] Reglas: all, clean, fclean, re
+- [x] Compila sin warnings
+- [x] C++98 compliant
 
 ---
 

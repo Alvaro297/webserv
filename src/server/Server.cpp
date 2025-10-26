@@ -127,22 +127,20 @@ void Server::readClient(int fds)
 		}
 	}
 	else if (bytes == 0)
-	{
-		std::cout << "Cliente fd " << fds << " desconectado" << std::endl;
-		close(fds);
-		this->_client.erase(fds);
-	}
+		closeClient(fds, "bytes is 0");
 	else  // bytes < 0
 	{
 		if (errno != EAGAIN)
-		{
-			std::cerr << "recv() failed: " << strerror(errno) << std::endl;
-			close(fds);
-			this->_client.erase(fds);
-		}
+			closeClient(fds, "recv() failed");
 	}
 }
 
+void Server::closeClient(int fd, const std::string& reason)
+{
+	std::cout << "[INFO] Cerrando cliente fd=" << fd << " - Motivo: " << reason << std::endl;
+	close(fd);
+	this->_client.erase(fd);
+}
 
 void Server::acceptSocket(int fds)
 {
@@ -239,11 +237,7 @@ void Server::run()
 			{
 				bool success = this->_client[fds[i].fd].writeClient();
 				if (!success)
-				{
-					std::cerr << "Error writing to client " << fds[i].fd << std::endl;
-					close(fds[i].fd);
-					this->_client.erase(fds[i].fd);
-				}
+					closeClient(fds[i].fd, "Error writing to client");
 			}
 		}
 	}

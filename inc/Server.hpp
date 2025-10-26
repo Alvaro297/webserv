@@ -39,7 +39,7 @@ private:
 	void acceptSocket(int fd);
 	void readClient(int fd);
 	void processRequest(int fd, const std::string& fullBuffer);
-
+	void closeClient(int fd, const std::string& reason);
 public:
 	Server();
 	Server(std::vector<ServerConfig>& servers);
