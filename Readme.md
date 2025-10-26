@@ -87,7 +87,7 @@ Si terminais algo marcarlo ya sea en negrita con un listo o tachandolo (No lo qu
 ## 📆 Semana 3 — Métodos HTTP completos y CGI
 
 ### Persona A (Networking)
-- ⏳ Implementar timeouts de conexión (detectar clientes inactivos)
+- **✅ Implementar timeouts de conexión (detectar clientes inactivos)**
 - ⏳ Manejar POLLOUT para escritura cuando buffer está lleno
 - ⏳ Gestión limpia de cierres (close() y erase() de _client)
 - ⏳ Keep-Alive: mantener conexión abierta para múltiples requests

@@ -15,6 +15,7 @@
 # include <arpa/inet.h>
 # include <netinet/in.h> // For sockaddr_in
 # include <poll.h>
+# include <signal.h>
 
 
 struct Listeners

@@ -9,6 +9,7 @@
 # include <cerrno>
 # include <sstream>
 # include <fcntl.h>
+#include <ctime>
 # include <sys/socket.h>
 # include <netinet/in.h>
 # include <arpa/inet.h>
@@ -21,6 +22,7 @@ private:
 	int fd;
 	std::string readBuffer;
 	std::string writeBuffer;
+	time_t		lastActivity;
 public:
 	Client();
 	Client(int fd);
@@ -32,10 +34,12 @@ public:
 	int getFd() const;
 	const std::string& getReadBuffer() const;
 	const std::string& getWriteBuffer() const;
+	const time_t& getLastActivity() const;
 
 	// Setters
 	void appendReadBuffer(const std::string& data);
 	void appendWriteBuffer(const std::string& data);
+	void setLastActivity(const time_t& time);
 	void clearReadBuffer();
 	void clearWriteBuffer();
 	bool writeClient();

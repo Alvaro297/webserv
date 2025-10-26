@@ -25,11 +25,14 @@ Server::~Server() {}
 
 void Server::processRequest(int fd, const std::string& fullBuffer)
 {
-	std::cout << "=== Request completa recibida de fd " << fd << " ===" << std::endl;
-	std::cout << fullBuffer << std::endl;
-	std::cout << "======================================" << std::endl;
-	
-	std::string response;
+	(void) fullBuffer;
+	std::string response = 
+		"HTTP/1.1 200 OK\r\n"
+		"Content-Type: text/html\r\n"
+		"Content-Length: 13\r\n"
+		"Connection: close\r\n"
+		"\r\n"
+		"Hello, World!";
 	// TODO: Cuando Dani tenga el parser, llamarlo aquí
 	// Request req = HTTPParser::parse(fullBuffer);
 	// Response resp = handleRequest(req);
@@ -115,6 +118,7 @@ void Server::readClient(int fds)
 	{
 		std::string chunk(buffer.data(), bytes);
 		this->_client[fds].appendReadBuffer(chunk);
+		this->_client[fds].setLastActivity(time(NULL));
 		line = this->_client[fds].getReadBuffer();
 		if (lineFinish(line))
 		{
@@ -153,11 +157,8 @@ void Server::acceptSocket(int fds)
 		return ;
 	}
 	fcntl(connect, F_SETFL, O_NONBLOCK);
-	
 	// Insertar directamente en el map sin crear objeto por defecto
 	this->_client.insert(std::make_pair(connect, Client(connect)));
-	
-	std::cout << "Nueva conexión aceptada: fd=" << connect << " (listener=" << fds << ")" << std::endl;
 }
 
 static bool isListener(std::map<std::string, Listeners> _listeners, int fdListener)
@@ -177,6 +178,7 @@ void Server::run()
 	struct pollfd tmp;
 
 	//Loop principal
+	signal(SIGPIPE, SIG_IGN);
 	while (true)
 	{
 		std::vector<struct pollfd> fds;
@@ -204,7 +206,19 @@ void Server::run()
 			std::cerr << "No file descriptors to poll." << std::endl;
 			break;
 		}
-		ready = poll(&fds[0], fds.size(), -1);
+		for (std::map<int,Client>::iterator it = _client.begin(); it != _client.end();)
+		{
+			time_t now = time(NULL);
+			if ((now - it->second.getLastActivity()) > 12)
+			{
+				std::cout << "Timeout of conexion" << std::endl;
+				close(it->first);
+				this->_client.erase(it++);
+			}
+			else
+				++it;
+		}
+		ready = poll(&fds[0], fds.size(), 1000);
 		if (ready < 0)
 		{
 			std::cerr << "poll() failed: " << strerror(errno) << std::endl;

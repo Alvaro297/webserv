@@ -1,13 +1,13 @@
 #include "../../inc/Client.hpp"
 
-Client::Client() : fd(-1), readBuffer(""), writeBuffer("") {}
+Client::Client() : fd(-1), readBuffer(""), writeBuffer(""), lastActivity(time(NULL)) {}
 
-Client::Client(int client_fd) : fd(client_fd), readBuffer(""), writeBuffer("")
+Client::Client(int client_fd) : fd(client_fd), readBuffer(""), writeBuffer(""), lastActivity(time(NULL))
 {
 	std::cout << "Client created with fd: " << fd << std::endl;
 }
 
-Client::Client(const Client& other) : fd(other.fd), readBuffer(other.readBuffer), writeBuffer(other.writeBuffer)
+Client::Client(const Client& other) : fd(other.fd), readBuffer(other.readBuffer), writeBuffer(other.writeBuffer), lastActivity(other.lastActivity)
 {
 	std::cout << "Client copy constructor (fd: " << fd << ")" << std::endl;
 }
@@ -19,6 +19,7 @@ Client& Client::operator=(const Client& other)
 		this->fd = other.fd;
 		this->readBuffer = other.readBuffer;
 		this->writeBuffer = other.writeBuffer;
+		this->lastActivity = other.lastActivity;
 	}
 	return *this;
 }
@@ -33,9 +34,13 @@ const std::string& Client::getReadBuffer() const { return readBuffer; }
 
 const std::string& Client::getWriteBuffer() const { return writeBuffer; }
 
+const time_t& Client::getLastActivity() const { return lastActivity; }
+
 void Client::appendReadBuffer(const std::string& data) { readBuffer.append(data); }
 
 void Client::appendWriteBuffer(const std::string& data) { writeBuffer.append(data); }
+
+void Client::setLastActivity(const time_t& time) { this->lastActivity = time; } 
 
 void Client::clearReadBuffer() { this->readBuffer.clear(); }
 
@@ -47,6 +52,7 @@ bool Client::writeClient()
 		return true;
 	else
 	{
+		this->setLastActivity(time(NULL));
 		ssize_t bytes_send = send(this->fd, this->getWriteBuffer().c_str(), this->getWriteBuffer().length(), MSG_NOSIGNAL);
 		if (bytes_send > 0)
 			this->writeBuffer.erase(0, bytes_send);
