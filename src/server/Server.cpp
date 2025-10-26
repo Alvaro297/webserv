@@ -209,6 +209,7 @@ void Server::run()
 		for (std::map<int,Client>::iterator it = _client.begin(); it != _client.end();)
 		{
 			time_t now = time(NULL);
+			// Esto es el timeout modificarlo a vuestra medida para si quereis seguir o no (Actualmente en 12 sec)
 			if ((now - it->second.getLastActivity()) > 12)
 			{
 				std::cout << "Timeout of conexion" << std::endl;
@@ -218,6 +219,7 @@ void Server::run()
 			else
 				++it;
 		}
+		//Este bucle se actualiza cada 1 sec gracias al poll por lo que el timeout como mucho sale con un sec de retraso
 		ready = poll(&fds[0], fds.size(), 1000);
 		if (ready < 0)
 		{
