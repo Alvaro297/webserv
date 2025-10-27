@@ -111,14 +111,20 @@ static bool lineFinish(std::string line)
 
 void Server::readClient(int fds)
 {
+	if (this->_client[fds].getReadBuffer().size() > 4194304)
+	{
+		std::string response = 
+			"HTTP/1.1 413 Payload Too Large\r\n"
+			"Content-Length: 0\r\n"
+			"Connection: close\r\n\r\n";
+		this->_client[fds].clearReadBuffer();
+		this->_client[fds].appendWriteBuffer(response);
+		closeClient(fds, "Request too large");
+		return;
+	}
 	std::vector<char> buffer(4096);
 	int bytes = recv(fds, buffer.data(), buffer.size(), 0);
 	
-	if (buffer.size() > 4194304)
-	{
-		std::cout << "Error 413 too large" << std::endl; //Pasarselo a Dani en un futuro
-		return ;
-	}
 	std::string line;
 	if (bytes > 0)
 	{
