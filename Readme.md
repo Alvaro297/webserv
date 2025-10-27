@@ -30,10 +30,10 @@ Si terminais algo marcarlo ya sea en negrita con un listo o tachandolo (No lo qu
 - **✅ SO_REUSEADDR para reutilizar puertos**
 
 ### Persona B (HTTP Engine)
-- ⏳ Diseñar clases Request y Response (headers, body, status code)
-- ⏳ Entender y resumir RFC 2616 (HTTP/1.1)
-- ⏳ Implementar parsing básico de una request simple (GET)
-- ⏳ Definir interfaz entre A y B (cómo recibir raw request)
+- **✅ Diseñar clases Request y Response (headers, body, status code)
+- **✅ Entender y resumir RFC 2616 (HTTP/1.1)
+- **✅ Implementar parsing básico de una request simple (GET)
+- **✅ Definir interfaz entre A y B (cómo recibir raw request)
 
 ### Persona C (Config + Files)
 - **✅ Crear parser básico de configuración (server { ... })**
@@ -62,12 +62,12 @@ Si terminais algo marcarlo ya sea en negrita con un listo o tachandolo (No lo qu
 - **✅ Manejar errores EAGAIN/EWOULDBLOCK correctamente**
 
 ### Persona B (HTTP Engine)
-- ⏳ Completar parsing HTTP: método, URI, versión, headers, body
-- ⏳ Implementar GET correctamente con rutas
+- **✅ Completar parsing HTTP: método, URI, versión, headers, body
+- **✅ Implementar GET correctamente con rutas
 - ⏳ Crear respuestas dinámicas con headers y códigos (200, 404, etc.)
-- ⏳ Validar requests malformadas (400 Bad Request)
-- ⏳ Manejar Content-Length para POST
-- ⏳ Definir estructura Request con métodos públicos
+- **✅ Validar requests malformadas (400 Bad Request)
+- **✅ Manejar Content-Length para POST
+- **✅ Definir estructura Request con métodos públicos
 
 ### Persona C (Config + Files)
 - **✅ Completar ConfigParser (múltiples servidores, locations)**
@@ -433,4 +433,5 @@ close(fd);
 int socket_fd = accept(...);
 // NO HACER: read(socket_fd, ...) directamente
 // CORRECTO: esperar POLLIN con poll()
+
 ```
