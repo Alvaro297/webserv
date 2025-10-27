@@ -108,7 +108,7 @@ static bool lineFinish(std::string line)
 			std::string lengthStr = line.substr(start, end - start);
 			lengthStr.erase(0, lengthStr.find_first_not_of(" \t"));
 			lengthStr.erase(lengthStr.find_last_not_of(" \t") + 1);
-			bodyLength = std::stoi(lengthStr);
+			bodyLength = std::atol(lengthStr.c_str());
 		}
 	}
 	if (line.find(eof) != std::string::npos)
