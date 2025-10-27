@@ -18,7 +18,7 @@ class Response
 	public:
 		Response();
 
-		void setStatus(int code, std::string& msg);
+		void setStatus(int code, const std::string& msg);
 		void setHeader(const std::string& key, const std::string& value);
 		void setBody(const std::string& body);
 

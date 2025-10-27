@@ -1,6 +1,6 @@
 #include "Request.hpp"
 
-Request::Request() {}
+Request::Request() : _contentLength(0) {}
 
 //Parse to separate the key/value of the _headers
 bool	Request::parseHeaderLine(std::string line) {
@@ -44,18 +44,43 @@ bool	Request::parseRequestValidity(const std::string& rawReq) {
 			return false;
 	}
 
-	//From the empty line must be the _body (if exists).
-	std::getline(stream, _body, '\0');
+	//Last _headers line can be the _contentLength. If not, _contentLength = 0.
+	std::map<std::string, std::string>::iterator it = _headers.find("Content-Length");
+	if (it != _headers.end()) {
+		std::istringstream	ss(it->second);
+		ss >> _contentLength;
+		if (!ss)
+			return false;
+	}
+	else
+		_contentLength = 0;
+
+	//From the empty line must be the _body (if exists). We want to read only the _coontentLength size, for security reasons only.
+	//ES POSIBLE QUE ESTO NO HAGA FALTA (cambiable por std::getline(stream, _body, '\0');) si Alvaro ya está protegiendo en el socket.
+	if (_contentLength > 0) {
+		_body.resize(_contentLength);
+		stream.read(&_body[0], _contentLength);
+	}
 
 	return true;
 }
 
-const std::string&	Request::getMethod() const {return _method;}
+const std::string&	Request::getMethod() const {
+	return _method;
+}
 
-const std::string&	Request::getPath() const {return _path;}
+const std::string&	Request::getPath() const {
+	return _path;
+}
 
-const std::string&	Request::getVersion() const {return _version;}
+const std::string&	Request::getVersion() const {
+	return _version;
+}
 
-const std::map<std::string, std::string>&	Request::getHeaders() const {return _headers;}
+const std::map<std::string, std::string>&	Request::getHeaders() const {
+	return _headers;
+}
 
-const std::string&	Request::getBody() const {return _body;}
+const std::string&	Request::getBody() const {
+	return _body;
+}
