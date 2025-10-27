@@ -95,9 +95,29 @@ void Server::initSockets()
 static bool lineFinish(std::string line)
 {
 	std::string eof = "\r\n\r\n";
+	std::string contLength = "Content-Length:";
+	size_t bodyLength = 0;
 
+	size_t posOfLength = line.find(contLength);
+	if (posOfLength != std::string::npos)
+	{
+		size_t start = posOfLength + contLength.length();
+		size_t end = line.find("\r\n", start);
+		if (end != std::string::npos)
+		{
+			std::string lengthStr = line.substr(start, end - start);
+			lengthStr.erase(0, lengthStr.find_first_not_of(" \t"));
+			lengthStr.erase(lengthStr.find_last_not_of(" \t") + 1);
+			bodyLength = std::stoi(lengthStr);
+		}
+	}
 	if (line.find(eof) != std::string::npos)
+	{
+		std::string body = line.substr(line.find(eof) + eof.length());
+		if (body.size() != bodyLength)
+			return false;
 		return true;
+	}
 	return false;
 }
 
