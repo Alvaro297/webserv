@@ -12,6 +12,8 @@ class Handler {
 		std::string	_root;
 		
 		Response	handleGET(const Request& req);
+		Response	handlePOST(const Request& req);
+		Response	handleDELETE(const Request& req);
 
 		std::string	buildFilePath(const std::string& rawReq) const;
 
