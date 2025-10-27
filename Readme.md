@@ -64,7 +64,7 @@ Si terminais algo marcarlo ya sea en negrita con un listo o tachandolo (No lo qu
 ### Persona B (HTTP Engine)
 - **✅ Completar parsing HTTP: método, URI, versión, headers, body
 - **✅ Implementar GET correctamente con rutas
-- ⏳ Crear respuestas dinámicas con headers y códigos (200, 404, etc.)
+- **✅ Crear respuestas dinámicas con headers y códigos (200, 404, etc.)
 - **✅ Validar requests malformadas (400 Bad Request)
 - **✅ Manejar Content-Length para POST
 - **✅ Definir estructura Request con métodos públicos
@@ -95,10 +95,10 @@ Si terminais algo marcarlo ya sea en negrita con un listo o tachandolo (No lo qu
 - **✅ lastActivity tracking en Client class**
 
 ### Persona B (HTTP Engine)
-- ⏳ Implementar POST con body completo
-- ⏳ Implementar DELETE (borrado de archivos)
+- **✅ Implementar POST con body completo
+- **✅ Implementar DELETE (borrado de archivos)
 - ⏳ Validar client_max_body_size
-- ⏳ Implementar códigos de error: 400, 403, 404, 405, 413, 500, 501, 505
+- **✅ Implementar códigos de error: 400, 403, 404, 405, 413, 500, 501, 505
 - ⏳ Parsing de Query String (?param=value)
 - ⏳ Gestionar uploads de archivos (multipart/form-data básico)
 
@@ -435,3 +435,4 @@ int socket_fd = accept(...);
 // CORRECTO: esperar POLLIN con poll()
 
 ```
+
