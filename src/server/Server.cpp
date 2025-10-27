@@ -203,9 +203,10 @@ void Server::run()
 	int ready;
 	struct pollfd tmp;
 
-	//Loop principal
 	signal(SIGINT, signalHandler);
 	signal(SIGPIPE, SIG_IGN);
+	//Falta controlar error 503 (Muchos clientes)
+	//Loop principal
 	while (!g_shutdown)
 	{
 		std::vector<struct pollfd> fds;
@@ -239,7 +240,7 @@ void Server::run()
 			// Esto es el timeout modificarlo a vuestra medida para si quereis seguir o no (Actualmente en 12 sec)
 			if ((now - it->second.getLastActivity()) > 1200)
 			{
-				std::cout << "Timeout of conexion" << std::endl;
+				std::cout << "Timeout of conexion 408" << std::endl; //Para Dani
 				close(it->first);
 				this->_client.erase(it++);
 			}
