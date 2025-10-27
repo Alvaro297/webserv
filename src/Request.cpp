@@ -14,8 +14,8 @@ bool	Request::parseHeaderLine(std::string line) {
 	//Removing ' ' and '\r'
 	if (!value.empty() && value[0] == ' ')
 		value.erase(0, 1);
-	if (!value.empty() && value.back() == '\r')
-		value.pop_back();
+	if (!value.empty() && value[value.size() - 1] == '\r')
+		value.erase(value.size() - 1);
 
 	_headers[key] = value;
 	return true;
@@ -36,8 +36,8 @@ bool	Request::parseRequestValidity(const std::string& rawReq) {
 
 	//From second line to empty line must be the _headers.
 	while (std::getline(stream, line)) {
-		if (!line.empty() && line.back() == '\r')
-			line.pop_back();
+		if (!line.empty() && line[line.size() - 1] == '\r')
+			line.erase(line.size() - 1);
 		if (line.empty())
 			break ;
 		if (!parseHeaderLine(line))
