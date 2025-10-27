@@ -7,6 +7,9 @@ OBJ_DIR  := obj
 
 SRCS := main.cpp \
         configParser.cpp \
+		Handler.cpp \
+		Request.cpp \
+		Response.cpp \
         server/ServerConfig.cpp \
         server/Server.cpp \
 		server/Client.cpp \

@@ -1,6 +1,8 @@
 #include "../../inc/Server.hpp"
 #include "../../inc/ServerConfig.hpp"
 #include "../../inc/Client.hpp"
+#include "Response.hpp"
+#include "Handler.hpp"
 
 static volatile sig_atomic_t g_shutdown = 0;
 
@@ -26,19 +28,9 @@ Server::~Server() {}
 
 void Server::processRequest(int fd, const std::string& fullBuffer)
 {
-	(void) fullBuffer;
-	std::string response = 
-		"HTTP/1.1 200 OK\r\n"
-		"Content-Type: text/html\r\n"
-		"Content-Length: 13\r\n"
-		"Connection: close\r\n"
-		"\r\n"
-		"Hello, World!";
-	// TODO: Cuando Dani tenga el parser, llamarlo aquí
-	// Request req = HTTPParser::parse(fullBuffer);
-	// Response resp = handleRequest(req);
-	// sendResponse(fd, resp);
-	this->_client[fd].appendWriteBuffer(response);
+	Handler hand("default_root");
+	Response resp = hand.handleRequest(fullBuffer);
+	this->_client[fd].appendWriteBuffer(resp.genResponseString());
 }
 
 void Server::createListener(const ServerConfig& config, const std::string& fullhost)

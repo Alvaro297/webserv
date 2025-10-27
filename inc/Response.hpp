@@ -13,11 +13,10 @@ class Response
 		std::map<std::string, std::string>	_headers;
 		std::string	_body;
 
-		std::string	genResponseString();
-
-	public:
+		public:
 		Response();
-
+		
+		std::string	genResponseString();
 		void setStatus(int code, const std::string& msg);
 		void setHeader(const std::string& key, const std::string& value);
 		void setBody(const std::string& body);
