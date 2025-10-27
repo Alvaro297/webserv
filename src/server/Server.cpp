@@ -1,8 +1,8 @@
 #include "../../inc/Server.hpp"
 #include "../../inc/ServerConfig.hpp"
 #include "../../inc/Client.hpp"
-#include "Response.hpp"
-#include "Handler.hpp"
+#include "../../inc/Response.hpp"
+#include "../../inc/Handler.hpp"
 
 static volatile sig_atomic_t g_shutdown = 0;
 
