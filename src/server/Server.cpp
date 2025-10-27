@@ -114,6 +114,11 @@ void Server::readClient(int fds)
 	std::vector<char> buffer(4096);
 	int bytes = recv(fds, buffer.data(), buffer.size(), 0);
 	
+	if (buffer.size() > 4194304)
+	{
+		std::cout << "Error 413 too large" << std::endl; //Pasarselo a Dani en un futuro
+		return ;
+	}
 	std::string line;
 	if (bytes > 0)
 	{
@@ -129,7 +134,7 @@ void Server::readClient(int fds)
 	}
 	else if (bytes == 0)
 		closeClient(fds, "bytes is 0");
-	else  // bytes < 0
+	else
 	{
 		if (errno != EAGAIN)
 			closeClient(fds, "recv() failed");
@@ -245,11 +250,24 @@ void Server::run()
 		ready = poll(&fds[0], fds.size(), 1000);
 		if (ready < 0)
 		{
+			if (errno == EINTR)
+				continue;
 			std::cerr << "poll() failed: " << strerror(errno) << std::endl;
 			break;
 		}
 		for (size_t i = 0; i < fds.size(); i++)
 		{
+			if (fds[i].revents & POLLERR)
+			{
+				closeClient(fds[i].fd, "Socket error");
+				continue;
+			}
+			if (fds[i].revents & POLLNVAL)
+			{
+				std::cerr << "[ERROR] Invalid fd=" << fds[i].fd << std::endl;
+				_client.erase(fds[i].fd);
+				continue;
+			}
 			if (fds[i].revents & POLLIN)
 			{
 				if (isListener(this->_listeners, fds[i].fd))
@@ -263,6 +281,8 @@ void Server::run()
 				if (!success)
 					closeClient(fds[i].fd, "Error writing to client");
 			}
+			if (fds[i].revents & POLLHUP)
+				closeClient(fds[i].fd, "Client hung up");
 		}
 	}
 	closeServer();
