@@ -130,6 +130,11 @@ const std::string&	Request::getBody() const {
 	return _body;
 }
 
-const std::map<std::string, std::string>&	Request::getQueryParam(const std::string& key) const {
-	return _queryMap[key];
+const std::string&	Request::getQueryParam(const std::string& key) const {
+	static const std::string empty = "";
+
+	std::map<std::string, std::string>::const_iterator it = _queryMap.find(key);
+	if (it != _queryMap.end())
+		return it->second;
+	return empty;
 }
