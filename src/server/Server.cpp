@@ -26,9 +26,47 @@ Server& Server::operator=(const Server& other)
 
 Server::~Server() {}
 
+std::string Server::extractFullPath(std::string fullBuffer)
+{
+	int port;
+	std::string host, fullPath, path;
+	size_t posOfLine = fullBuffer.find("Host:") + 5;
+	size_t end = fullBuffer.find("\r\n", posOfLine);
+
+	if (end != std::string::npos)
+	{
+		std::string line = fullBuffer.substr(posOfLine, end - posOfLine);
+		line.erase(0, line.find_first_not_of(" \t"));
+		size_t dotsPosition = line.find(":");
+		if (dotsPosition != std::string::npos)
+		{
+			host = line.substr(0, dotsPosition);
+			port = std::atoi(line.substr(dotsPosition + 1).c_str()); 
+		}
+		else
+		{
+			host = "localhost";
+			port = 80;
+		}
+	}
+	std::stringstream ss;
+	ss << port;
+	std::string fullhost = host + ":" + ss.str();
+	
+	std::map<std::string, Listeners>::iterator it = _listeners.find(fullhost);
+	if (it != _listeners.end() && !it->second.servers.empty())
+	{
+		return it->second.servers[0].getRoot();
+	}
+	return "default_root";
+}
+
 void Server::processRequest(int fd, const std::string& fullBuffer)
 {
-	Handler hand("default_root");
+	std::string fullPath;
+
+	fullPath = extractFullPath(fullBuffer);
+	Handler hand(fullPath);
 	Response resp = hand.handleRequest(fullBuffer);
 	this->_client[fd].appendWriteBuffer(resp.genResponseString());
 }

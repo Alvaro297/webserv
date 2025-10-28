@@ -41,6 +41,7 @@ private:
 	void processRequest(int fd, const std::string& fullBuffer);
 	void closeClient(int fd, const std::string& reason);
 	void closeServer();
+	std::string extractFullPath(std::string fullBuffer);
 public:
 	Server();
 	Server(std::vector<ServerConfig>& servers);
