@@ -30,7 +30,7 @@ class Request
 		const std::string&	getVersion() const;
 		const std::map<std::string, std::string>&	getHeaders() const;
 		const std::string&	getBody() const;
-		const std::map<std::string, std::string>&	getQueryParam(const std::string& key) const;
+		const std::string&	getQueryParam(const std::string& key) const;
 
 } ;
 
