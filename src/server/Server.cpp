@@ -217,6 +217,25 @@ void Server::acceptSocket(int fds)
 		return ;
 	}
 	fcntl(connect, F_SETFL, O_NONBLOCK);
+	if (this->_client.size() >= 1000)
+	{
+		int temp_fd = accept(fds, NULL, NULL);
+		if (temp_fd >= 0)
+		{
+			// 2. CREAR RESPONSE 503 DIRECTAMENTE
+			std::string response = 
+				"HTTP/1.1 503 Service Unavailable\r\n"
+				"Content-Type: text/plain\r\n"
+				"Content-Length: 21\r\n"
+				"Retry-After: 60\r\n"
+				"Connection: close\r\n\r\n"
+				"Service Unavailable";
+			
+			send(temp_fd, response.c_str(), response.size(), 0);
+			close(temp_fd);
+		}
+		return;
+	}
 	// Insertar directamente en el map sin crear objeto por defecto
 	this->_client.insert(std::make_pair(connect, Client(connect)));
 }
