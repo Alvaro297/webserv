@@ -41,7 +41,7 @@ private:
 	void processRequest(int fd, const std::string& fullBuffer);
 	void closeClient(int fd, const std::string& reason);
 	void closeServer();
-	std::string extractFullPath(std::string fullBuffer);
+	ServerConfig* extractFullPath(std::string fullBuffer);
 public:
 	Server();
 	Server(std::vector<ServerConfig>& servers);
@@ -57,6 +57,4 @@ public:
 			const char* what() const throw() { return "Error in the conexion client server"; };
 	};
 };
-
-
 #endif

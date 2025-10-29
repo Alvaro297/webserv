@@ -26,7 +26,7 @@ Server& Server::operator=(const Server& other)
 
 Server::~Server() {}
 
-std::string Server::extractFullPath(std::string fullBuffer)
+ServerConfig* Server::extractFullPath(std::string fullBuffer)
 {
 	int port;
 	std::string host, fullPath, path;
@@ -56,16 +56,20 @@ std::string Server::extractFullPath(std::string fullBuffer)
 	std::map<std::string, Listeners>::iterator it = _listeners.find(fullhost);
 	if (it != _listeners.end() && !it->second.servers.empty())
 	{
-		return it->second.servers[0].getRoot();
+		return &it->second.servers[0];
 	}
-	return "default_root";
+	return NULL;
 }
+
 
 void Server::processRequest(int fd, const std::string& fullBuffer)
 {
 	std::string fullPath;
 
-	fullPath = extractFullPath(fullBuffer);
+	if (extractFullPath(fullBuffer))
+		fullPath = extractFullPath(fullBuffer)->getRoot();
+	else
+		fullPath = "default_root"; //Pendiente de mejora pasar toda la configuracion
 	Handler hand(fullPath);
 	Response resp = hand.handleRequest(fullBuffer);
 	this->_client[fd].appendWriteBuffer(resp.genResponseString());
@@ -175,7 +179,17 @@ static bool lineFinish(std::string line)
 
 void Server::readClient(int fds)
 {
-	if (this->_client[fds].getReadBuffer().size() > 4194304)
+	std::string currentBuffer = this->_client[fds].getReadBuffer();
+	size_t maxBodySize = 4194304;
+
+	if (currentBuffer.find("Host:") != std::string::npos)
+	{
+		ServerConfig* config = extractFullPath(currentBuffer);
+		if (config != NULL)
+			maxBodySize = config->getClientMaxBodySize();
+	}
+
+	if (this->_client[fds].getReadBuffer().size() > maxBodySize)
 	{
 		std::string response = 
 			"HTTP/1.1 413 Payload Too Large\r\n"

@@ -21,6 +21,14 @@ ServerConfig::ServerConfig(const ServerConfigStruct server, int id)
 	this->root = normalizeRoot(server.root);
 	this->ipv = server.ipv;
 	this->index = server.index;
+	this->locations = server.locations;
+	this->error_pages = server.error_pages;
+	this->client_max_body_size = server.client_max_body_size;
+	this->autoindex = server.autoindex;
+	this->upload_enable = server.upload_enable;
+	this->upload_store = server.upload_store;
+	this->cgi_extensions = server.cgi_extensions;
+	this->cgi_enable = server.cgi_enable;
 }
 
 ServerConfig::ServerConfig(const ServerConfig& other)
@@ -86,6 +94,14 @@ const std::string& ServerConfig::getServerName() const { return server_name; }
 const std::string& ServerConfig::getRoot() const { return root; }
 int ServerConfig::getIpv() const { return ipv; }
 const std::vector<std::string>& ServerConfig::getIndex() const { return index; }
+const std::vector<LocationConfigStruct>& ServerConfig::getLocations() const { return locations; }
+const std::map<int, std::string>& ServerConfig::getErrorPages() const { return error_pages; }
+size_t ServerConfig::getClientMaxBodySize() const { return client_max_body_size; }
+bool ServerConfig::getAutoindex() const { return autoindex; }
+bool ServerConfig::getUploadEnable() const { return upload_enable; }
+const std::string& ServerConfig::getUploadStore() const { return upload_store; }
+const std::map<std::string, std::string>& ServerConfig::getCgiExtensions() const { return cgi_extensions; }
+bool ServerConfig::getCgiEnable() const { return cgi_enable; }
 
 
 // Setters
