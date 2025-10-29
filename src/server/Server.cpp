@@ -186,7 +186,7 @@ void Server::readClient(int fds)
 	{
 		ServerConfig* config = extractFullPath(currentBuffer);
 		if (config != NULL)
-			maxBodySize = config->getClientMaxBodySize();
+			maxBodySize = config->getClientMaxBodySize(); //TODO: Implement maxBodySize all servers
 	}
 
 	if (this->_client[fds].getReadBuffer().size() > maxBodySize)
