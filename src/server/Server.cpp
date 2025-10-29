@@ -220,17 +220,17 @@ void Server::closeClient(int fd, const std::string& reason)
 
 void Server::acceptSocket(int fds)
 {
-	int connect = 0;
+	int client_fd = 0;
 
 	sockaddr_in client_addr;
 	socklen_t client_len = sizeof(client_addr);
-	connect = accept(fds, (struct sockaddr*)&client_addr, &client_len);
-	if (connect < 0)
+	client_fd = accept(fds, (struct sockaddr*)&client_addr, &client_len);
+	if (client_fd < 0)
 	{
 		std::cerr << "accept() failed: " << strerror(errno) << std::endl;
 		return ;
 	}
-	fcntl(connect, F_SETFL, O_NONBLOCK);
+	fcntl(client_fd, F_SETFL, O_NONBLOCK);
 	if (this->_client.size() >= 1000)
 	{
 		std::string response = 
@@ -241,12 +241,12 @@ void Server::acceptSocket(int fds)
 			"Connection: close\r\n\r\n"
 			"Service Unavailable";
 		
-		send(connect, response.c_str(), response.size(), 0);
-		close(connect);
+		send(client_fd, response.c_str(), response.size(), 0);
+		close(client_fd);
 		return;
 	}
 	// Insertar directamente en el map sin crear objeto por defecto
-	this->_client.insert(std::make_pair(connect, Client(connect)));
+	this->_client.insert(std::make_pair(client_fd, Client(client_fd)));
 }
 
 static bool isListener(std::map<std::string, Listeners> _listeners, int fdListener)
