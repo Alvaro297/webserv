@@ -130,11 +130,24 @@ void Server::initSockets()
 	}
 }
 
+static std::string whatMethod(std::string line)
+{
+	std::string typeMethod;
+	size_t firstSpace = line.find(" ");
+
+	typeMethod = line.substr(0, firstSpace);
+	if (typeMethod != "POST" || typeMethod != "GET"
+		|| typeMethod != "DELETE")
+		return "GET";
+	return typeMethod;
+}
+
 static bool lineFinish(std::string line)
 {
 	std::string eof = "\r\n\r\n";
 	std::string contLength = "Content-Length:";
 	size_t bodyLength = 0;
+	std::string typeMethod = whatMethod(line);
 
 	size_t posOfLength = line.find(contLength);
 	if (posOfLength != std::string::npos)
@@ -151,10 +164,11 @@ static bool lineFinish(std::string line)
 	}
 	if (line.find(eof) != std::string::npos)
 	{
+		if (typeMethod == "GET" || typeMethod == "DELETE"
+				&& posOfLength == std::string::npos)
+			return true;
 		std::string body = line.substr(line.find(eof) + eof.length());
-		if (body.size() != bodyLength)
-			return false;
-		return true;
+		return body.size() >= bodyLength;
 	}
 	return false;
 }
