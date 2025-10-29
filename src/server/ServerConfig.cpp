@@ -10,6 +10,15 @@ ServerConfig::ServerConfig()
 	this->server_name = "localhost";
 	this->root = "/var/www/html";
 	this->ipv = 4;
+	this->client_max_body_size = 1048576;  // 1MB default
+	this->autoindex = false;
+	this->upload_enable = false;
+	this->cgi_enable = false;
+	this->upload_store = "";
+	this->index.clear();
+	this->locations.clear();
+	this->error_pages.clear();
+	this->cgi_extensions.clear();
 }
 
 ServerConfig::ServerConfig(const ServerConfigStruct server, int id)
@@ -42,6 +51,14 @@ ServerConfig::ServerConfig(const ServerConfig& other)
 		this->root = other.root;
 		this->ipv = other.ipv;
 		this->index = other.index;
+		this->locations = other.locations;
+		this->error_pages = other.error_pages;
+		this->client_max_body_size = other.client_max_body_size;
+		this->autoindex = other.autoindex;
+		this->upload_enable = other.upload_enable;
+		this->upload_store = other.upload_store;
+		this->cgi_extensions = other.cgi_extensions;
+		this->cgi_enable = other.cgi_enable;
 	}
 }
 
@@ -56,6 +73,14 @@ ServerConfig& ServerConfig::operator=(const ServerConfig& other)
 		this->root = other.root;
 		this->ipv = other.ipv;
 		this->index = other.index;
+		this->locations = other.locations;
+		this->error_pages = other.error_pages;
+		this->client_max_body_size = other.client_max_body_size;
+		this->autoindex = other.autoindex;
+		this->upload_enable = other.upload_enable;
+		this->upload_store = other.upload_store;
+		this->cgi_extensions = other.cgi_extensions;
+		this->cgi_enable = other.cgi_enable;
 	}
 	return *this;
 }
