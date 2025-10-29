@@ -241,9 +241,8 @@ void Server::acceptSocket(int fds)
 			"Connection: close\r\n\r\n"
 			"Service Unavailable";
 		
-		send(temp_fd, response.c_str(), response.size(), 0);
-		close(temp_fd);
-	}
+		send(connect, response.c_str(), response.size(), 0);
+		close(connect);
 		return;
 	}
 	// Insertar directamente en el map sin crear objeto por defecto
