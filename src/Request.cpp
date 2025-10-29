@@ -3,7 +3,7 @@
 Request::Request() : _contentLength(0) {}
 
 //Parse to separate the key/value of the _headers
-bool	Request::parseHeaderLine(std::string line) {
+bool	Request::parseHeaderLine(std::string& line) {
 	size_t	colon = line.find(':');
 	if (colon == std::string::npos)
 		return false;
@@ -21,6 +21,50 @@ bool	Request::parseHeaderLine(std::string line) {
 	return true;
 }
 
+//Separate the different queryParams and insert them in the _queryMap. & is the separator between different params.
+bool	Request::parseQuery(std::string rawQuery) {
+	try {
+		while (!rawQuery.empty()) {
+			size_t		ampers = rawQuery.find("&");
+			std::string	param = rawQuery.substr(0, ampers);
+			size_t		equal = param.find("=");
+
+			if (equal != std::string::npos) {
+				std::string	key = param.substr(0, equal);
+				std::string value = param.substr(equal + 1);
+				_queryMap[key] = value;
+			}
+			else if (!param.empty())
+				_queryMap[param] = "";
+
+			if (ampers != std::string::npos)
+				rawQuery.erase(0, ampers + 1);
+			else
+				rawQuery.clear();
+		}
+	}
+	catch (const std::exception& e) {
+		return false;
+	}
+	return true;
+}
+
+//Parse the path in case there are query strings on it (separating actual _path and _queryMap).
+bool	Request::parsePath() {
+	try {
+		size_t	queryPos = _path.find("?");
+		if (queryPos != std::string::npos) {
+			if (!parseQuery(_path.substr(queryPos + 1)))
+				return false;
+			_path.erase(queryPos);
+		}
+	}
+	catch (const std::exception& e) {
+		return false;
+	}
+	return true;
+}
+
 //Parse the Request to fill the vars.
 bool	Request::parseRequestValidity(const std::string& rawReq) {
 	std::istringstream  stream(rawReq);
@@ -32,6 +76,8 @@ bool	Request::parseRequestValidity(const std::string& rawReq) {
 	//The first line must include _method, _path and _version.
 	std::istringstream	ss(line);
 	if (!(ss >> _method >> _path >> _version))
+		return false;
+	if (!parsePath())
 		return false;
 
 	//From second line to empty line must be the _headers.
@@ -56,7 +102,6 @@ bool	Request::parseRequestValidity(const std::string& rawReq) {
 		_contentLength = 0;
 
 	//From the empty line must be the _body (if exists). We want to read only the _coontentLength size, for security reasons only.
-	//ES POSIBLE QUE ESTO NO HAGA FALTA (cambiable por std::getline(stream, _body, '\0');) si Alvaro ya está protegiendo en el socket.
 	if (_contentLength > 0) {
 		_body.resize(_contentLength);
 		stream.read(&_body[0], _contentLength);
@@ -83,4 +128,13 @@ const std::map<std::string, std::string>&	Request::getHeaders() const {
 
 const std::string&	Request::getBody() const {
 	return _body;
+}
+
+const std::string&	Request::getQueryParam(const std::string& key) const {
+	static const std::string empty = "";
+
+	std::map<std::string, std::string>::const_iterator it = _queryMap.find(key);
+	if (it != _queryMap.end())
+		return it->second;
+	return empty;
 }

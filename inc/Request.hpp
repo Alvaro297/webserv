@@ -8,14 +8,17 @@
 class Request
 {
 	private:
-		std::string	_method;
-		std::string	_path;
-		std::string	_version;
+		std::string							_method;
+		std::string							_path;
+		std::map<std::string, std::string>	_queryMap;
+		std::string							_version;
 		std::map<std::string, std::string>	_headers;
-		std::string	_body;
-		size_t		_contentLength;
+		std::string							_body;
+		size_t								_contentLength;
 
-		bool	parseHeaderLine(std::string line);
+		bool	parsePath();
+		bool	parseQuery(std::string rawQuery);
+		bool	parseHeaderLine(std::string& line);
 
 	public:
 		Request();
@@ -27,6 +30,7 @@ class Request
 		const std::string&	getVersion() const;
 		const std::map<std::string, std::string>&	getHeaders() const;
 		const std::string&	getBody() const;
+		const std::string&	getQueryParam(const std::string& key) const;
 
 } ;
 
