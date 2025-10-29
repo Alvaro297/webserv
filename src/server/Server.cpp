@@ -164,8 +164,8 @@ static bool lineFinish(std::string line)
 	}
 	if (line.find(eof) != std::string::npos)
 	{
-		if (typeMethod == "GET" || typeMethod == "DELETE"
-				&& posOfLength == std::string::npos)
+		if (typeMethod == "GET" || (typeMethod == "DELETE"
+				&& posOfLength == std::string::npos))
 			return true;
 		std::string body = line.substr(line.find(eof) + eof.length());
 		return body.size() >= bodyLength;
