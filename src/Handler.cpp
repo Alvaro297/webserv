@@ -9,6 +9,25 @@ std::string	Handler::buildFilePath(const std::string& rawReq) const {
 	return _root + rawReq;
 }
 
+// Simple mime type detection based on file extension
+std::string Handler::getMimeType(const std::string& path) const {
+	size_t pos = path.rfind('.');
+	if (pos == std::string::npos)
+		return "application/octet-stream";
+	std::string ext = path.substr(pos);
+	if (ext == ".html" || ext == ".htm") return "text/html";
+	if (ext == ".css") return "text/css";
+	if (ext == ".js") return "application/javascript";
+	if (ext == ".json") return "application/json";
+	if (ext == ".png") return "image/png";
+	if (ext == ".jpg" || ext == ".jpeg") return "image/jpeg";
+	if (ext == ".gif") return "image/gif";
+	if (ext == ".svg") return "image/svg+xml";
+	if (ext == ".txt") return "text/plain";
+	if (ext == ".xml") return "application/xml";
+	return "application/octet-stream";
+}
+
 Response	Handler::handlePOST(const Request& req) {
 	Response	res;
 	try {
@@ -88,7 +107,7 @@ Response	Handler::handleGET(const Request& req) {
 		file.close();
 
 		res.setStatus(200, "OK");
-		res.setHeader("Content-Type", "text/html");
+		res.setHeader("Content-Type", getMimeType(path)); //añadido por Mario
 		res.setBody(buff.str());
 	}
 	catch (const std::exception& e) {

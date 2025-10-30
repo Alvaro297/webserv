@@ -16,6 +16,7 @@ class Handler {
 		Response	handleDELETE(const Request& req);
 
 		std::string	buildFilePath(const std::string& rawReq) const;
+		std::string	getMimeType(const std::string& path) const; //Añadido por Mario
 
 	public:
 		Handler(const std::string& root);
