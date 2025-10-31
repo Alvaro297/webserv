@@ -179,8 +179,9 @@ static bool lineFinish(std::string line)
 
 size_t getMaxBodySizeLocation(ServerConfig *config, std::string currentBuffer)
 {
-	size_t firstSpaces = currentBuffer.find(" ");
-	std::string path = currentBuffer.substr(firstSpaces, currentBuffer.find(" ", firstSpaces));
+	size_t firstSpace = currentBuffer.find(" ");
+	size_t secondSpace = currentBuffer.find(" ", firstSpace + 1);
+	std::string path = currentBuffer.substr(firstSpace + 1, secondSpace - firstSpace - 1);
 	size_t bodySize = config->getClientMaxBodySize();
 	std::string pathLocation;
 	size_t longPath = 0;
@@ -188,7 +189,7 @@ size_t getMaxBodySizeLocation(ServerConfig *config, std::string currentBuffer)
 	for (size_t i = 0; i < config->getLocations().size(); i++)
 	{
 		pathLocation = config->getLocations()[i].path;
-		if (path.find(pathLocation) != std::string::npos && longPath < pathLocation.length())
+		if (path.substr(0, pathLocation.length()) == pathLocation && longPath < pathLocation.length())
 		{
 			bodySize = config->getLocations()[i].bodySize;
 			longPath = pathLocation.length();
