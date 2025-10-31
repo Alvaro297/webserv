@@ -19,12 +19,14 @@ class Request
 		std::string							_bound;
 		std::vector<std::string>			_multiBody;
 		std::map<std::string, std::string>	_queryMap;
+		std::string							_fileType;
 		
 		bool	parsePath();
 		bool	parseQuery(std::string rawQuery);
 		bool	parseHeaderLine(std::string& line);
 		bool	parseMultipart(std::string& multi);
 		bool	findBoundary(std::string& multi);
+		bool	setFileType();
 
 	public:
 		Request();
@@ -34,6 +36,7 @@ class Request
 		const std::string&	getMethod() const;
 		const std::string&	getPath() const;
 		const std::string&	getVersion() const;
+		const std::string&	getType() const;
 		const std::map<std::string, std::string>&	getHeaders() const;
 		const std::string&	getBody() const;
 		const std::string&	getQueryParam(const std::string& key) const;

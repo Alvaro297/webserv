@@ -63,6 +63,47 @@ bool	Request::parsePath() {
 				return false;
 			_path.erase(queryPos);
 		}
+		setFileType();
+	}
+	catch (const std::exception& e) {
+		return false;
+	}
+	return true;
+}
+
+//Determine the type of file and save it for later use.
+bool	Request::setFileType() {
+	try {
+		size_t pos = _path.rfind('.');
+	
+		if (pos == std::string::npos) {
+			_fileType = "application/octet-stream";
+			return true;
+		}
+	
+		std::string ext = _path.substr(pos);
+	
+		static const std::map<std::string, std::string>	typeMap = {
+			std::make_pair(".html", "text/html"),
+			std::make_pair(".htm", ".htm"),
+			std::make_pair(".css", "text/css"),
+			std::make_pair(".js", "application/javascript"),
+			std::make_pair(".json", "application/json"),
+			std::make_pair(".png", "image/png"),
+			std::make_pair(".jpg", "image/jpeg"),
+			std::make_pair(".jpeg", "image/jpeg"),
+			std::make_pair(".gif", "image/gif"),
+			std::make_pair(".svg", "image/svg+xml"),
+			std::make_pair(".txt", "text/plain"),
+			std::make_pair(".xml", "application/xml"),
+		};
+	
+		std::map<std::string, std::string>::const_iterator it = typeMap.find(ext);
+		if (it != typeMap.end())
+			_fileType = it->second;
+			return true;
+	
+		_fileType = "application/octet-stream";
 	}
 	catch (const std::exception& e) {
 		return false;
@@ -192,5 +233,9 @@ const std::string&  Request::getBound() const {
 
 const std::vector<std::string>& Request::getMultiBody() const {
 	return _multiBody;
+}
+
+const std::string&	Request::getType() const {
+	return _fileType;
 }
 //----------------<

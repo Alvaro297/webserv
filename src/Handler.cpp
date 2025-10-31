@@ -55,12 +55,12 @@ Response Handler::handleMULT(const Request& req) {
 				throw ;
 		}
 		res.setStatus(200, "OK");
-		res.setHeader("Content-Type", "text/html");
+		res.setHeader("Content-Type", req.getType());
 		res.setBody("<h1>File uploaded succesfully</h1>");
 	}
 	catch (const std::exception& e) {
 		res.setStatus(500, "Internal Server Error");
-		res.setHeader("Content-Type", "text/html");
+		res.setHeader("Content-Type", req.getType());
 		res.setBody("<h1>500 Internal Server Error</h1>");
 	}
 	return res;
@@ -80,12 +80,12 @@ Response	Handler::handlePOST(const Request& req) {
 		file.close();
 
 		res.setStatus(201, "Created");
-		res.setHeader("Content-Type", "text/html");
+		res.setHeader("Content-Type", req.getType());
 		res.setBody("<h1>201 Created</h1>");
 	}
 	catch (const std::exception& e) {
 		res.setStatus(500, "Internal Server Error");
-		res.setHeader("Content-Type", "text/html");
+		res.setHeader("Content-Type", req.getType());
 		res.setBody("<h1>500 Internal Server Error</h1>");
 	}
 	return res;
@@ -102,7 +102,7 @@ Response	Handler::handleDELETE(const Request& req) {
 		struct stat s; //Verify path/file availability.
 		if (stat(path.c_str(), &s) != 0 || S_ISDIR(s.st_mode)) {
 			res.setStatus(404, "Not Found");
-			res.setHeader("Content-Type", "text/html");
+			res.setHeader("Content-Type", req.getType());
 			res.setBody("<h1>404 Not Found</h1>");
 			return res;
 		}
@@ -111,12 +111,12 @@ Response	Handler::handleDELETE(const Request& req) {
 			throw std::runtime_error("Error deleting file");
 
 		res.setStatus(200, "OK");
-		res.setHeader("Content-Type", "text/html");
+		res.setHeader("Content-Type", req.getType());
 		res.setBody("<h1>200 OK - File Deleted</h1>");
 	}
 	catch (const std::exception& e) {
 		res.setStatus(500, "Internal Server Error");
-		res.setHeader("Content-Type", "text/html");
+		res.setHeader("Content-Type", req.getType());
 		res.setBody("<h1>500 Internal Server Error</h1>");
 	}
 
@@ -133,7 +133,7 @@ Response	Handler::handleGET(const Request& req) {
 		struct stat s; //Verify path/file availability.
 		if (stat(path.c_str(), &s) != 0 || S_ISDIR(s.st_mode)) {
 			res.setStatus(404, "Not Found");
-			res.setHeader("Content-Type", "text/html");
+			res.setHeader("Content-Type", req.getType());
 			res.setBody("<h1>404 Not Found</h1>");
 			return res;
 		}
@@ -141,7 +141,7 @@ Response	Handler::handleGET(const Request& req) {
 		std::ifstream file(path.c_str(), std::ios::in | std::ios::binary); //Open file in read mode.
 		if (!file.is_open()) {
 			res.setStatus(403, "Forbidden");
-			res.setHeader("Content-Type", "text/html");
+			res.setHeader("Content-Type", req.getType());
 			res.setBody("<h1>403 Forbidden</h1>");
 			return res;
 		}
@@ -151,12 +151,12 @@ Response	Handler::handleGET(const Request& req) {
 		file.close();
 
 		res.setStatus(200, "OK");
-		res.setHeader("Content-Type", getMimeType(path)); //añadido por Mario
+		res.setHeader("Content-Type", req.getType());
 		res.setBody(buff.str());
 	}
 	catch (const std::exception& e) {
 		res.setStatus(500, "Internal Server Error");
-		res.setHeader("Content-Type", "text/html");
+		res.setHeader("Content-Type", req.getType());
 		res.setBody("<h1>500 Internal Server Error</h1>");
 	}
 	return res;
@@ -169,14 +169,14 @@ Response	Handler::handleRequest(const std::string& rawReq) {
 
 	if (!req.parseRequestValidity(rawReq)) {
 		res.setStatus(400, "Bad Request");
-		res.setHeader("Content-Type", "text/html");
+		res.setHeader("Content-Type", req.getType());
 		res.setBody("<h1>400 Bad Request</h1>");
 		return res;
 	}
 
 	if(req.getVersion() != "HTTP/1.1") {
 		res.setStatus(505, "HTTP Version Not Supported");
-		res.setHeader("Content-Type", "text/html");
+		res.setHeader("Content-Type", req.getType());
 		res.setBody("<h1>505 Version Not Supported</h1>");
 		return res;
 	}
@@ -192,7 +192,7 @@ Response	Handler::handleRequest(const std::string& rawReq) {
 		return handleDELETE(req);
 	else {
 		res.setStatus(405, "Method Not Allowed");
-		res.setHeader("Content-Type", "text/html");
+		res.setHeader("Content-Type", req.getType());
 		res.setBody("<h1>405 Method Not Allowed</h1>");
 		return res;
 	}
