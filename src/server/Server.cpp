@@ -177,6 +177,14 @@ static bool lineFinish(std::string line)
 	return false;
 }
 
+size_t getMaxBodySizeLocation(ServerConfig *config, std::string currentBuffer)
+{
+	size_t firstSpaces = currentBuffer.find(" ");
+	std::string path = currentBuffer.substr(firstSpaces, currentBuffer.find(" ", firstSpaces));
+	size_t bodySize = config->getClientMaxBodySize();
+
+}
+
 void Server::readClient(int fds)
 {
 	std::string currentBuffer = this->_client[fds].getReadBuffer();
@@ -186,7 +194,7 @@ void Server::readClient(int fds)
 	{
 		ServerConfig* config = extractFullPath(currentBuffer);
 		if (config != NULL)
-			maxBodySize = config->getClientMaxBodySize(); //TODO: Implement maxBodySize all servers
+			maxBodySize = getMaxBodySizeLocation(config, currentBuffer);
 	}
 
 	if (this->_client[fds].getReadBuffer().size() > maxBodySize)
