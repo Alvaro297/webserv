@@ -182,7 +182,19 @@ size_t getMaxBodySizeLocation(ServerConfig *config, std::string currentBuffer)
 	size_t firstSpaces = currentBuffer.find(" ");
 	std::string path = currentBuffer.substr(firstSpaces, currentBuffer.find(" ", firstSpaces));
 	size_t bodySize = config->getClientMaxBodySize();
+	std::string pathLocation;
+	size_t longPath = 0;
 
+	for (size_t i = 0; i < config->getLocations().size(); i++)
+	{
+		pathLocation = config->getLocations()[i].path;
+		if (path.find(pathLocation) != std::string::npos && longPath < pathLocation.length())
+		{
+			bodySize = config->getLocations()[i].bodySize;
+			longPath = pathLocation.length();
+		}
+	}
+	return bodySize;
 }
 
 void Server::readClient(int fds)
