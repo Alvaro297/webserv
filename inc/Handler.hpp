@@ -14,6 +14,7 @@ class Handler {
 		Response	handleGET(const Request& req);
 		Response	handlePOST(const Request& req);
 		Response	handleDELETE(const Request& req);
+		Response	handleMULT(const Request& req);
 
 		std::string	buildFilePath(const std::string& rawReq) const;
 		std::string	getMimeType(const std::string& path) const; //Añadido por Mario

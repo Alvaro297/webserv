@@ -1,71 +1,12 @@
 #include "../inc/Request.hpp"
 
+	//CONSTRUCTOR//---------------->
 Request::Request() : _contentLength(0) {}
+//----------------<
 
-//Parse to separate the key/value of the _headers
-bool	Request::parseHeaderLine(std::string& line) {
-	size_t	colon = line.find(':');
-	if (colon == std::string::npos)
-		return false;
 
-	std::string	key = line.substr(0, colon);
-	std::string value = line.substr(colon + 1);
-
-	//Removing ' ' and '\r'
-	if (!value.empty() && value[0] == ' ')
-		value.erase(0, 1);
-	if (!value.empty() && value[value.size() - 1] == '\r')
-		value.erase(value.size() - 1);
-
-	_headers[key] = value;
-	return true;
-}
-
-//Separate the different queryParams and insert them in the _queryMap. & is the separator between different params.
-bool	Request::parseQuery(std::string rawQuery) {
-	try {
-		while (!rawQuery.empty()) {
-			size_t		ampers = rawQuery.find("&");
-			std::string	param = rawQuery.substr(0, ampers);
-			size_t		equal = param.find("=");
-
-			if (equal != std::string::npos) {
-				std::string	key = param.substr(0, equal);
-				std::string value = param.substr(equal + 1);
-				_queryMap[key] = value;
-			}
-			else if (!param.empty())
-				_queryMap[param] = "";
-
-			if (ampers != std::string::npos)
-				rawQuery.erase(0, ampers + 1);
-			else
-				rawQuery.clear();
-		}
-	}
-	catch (const std::exception& e) {
-		return false;
-	}
-	return true;
-}
-
-//Parse the path in case there are query strings on it (separating actual _path and _queryMap).
-bool	Request::parsePath() {
-	try {
-		size_t	queryPos = _path.find("?");
-		if (queryPos != std::string::npos) {
-			if (!parseQuery(_path.substr(queryPos + 1)))
-				return false;
-			_path.erase(queryPos);
-		}
-	}
-	catch (const std::exception& e) {
-		return false;
-	}
-	return true;
-}
-
-//Parse the Request to fill the vars.
+	//MAIN PARSER//---------------->
+// Parse the Request to fill the vars.
 bool	Request::parseRequestValidity(const std::string& rawReq) {
 	std::istringstream  stream(rawReq);
 	std::string  line;
@@ -109,7 +50,113 @@ bool	Request::parseRequestValidity(const std::string& rawReq) {
 
 	return true;
 }
+//----------------<
 
+
+	//PATH PARSERS//---------------->
+// Parse the path in case there are query strings on it (separating actual _path and _queryMap).
+bool	Request::parsePath() {
+	try {
+		size_t	queryPos = _path.find("?");
+		if (queryPos != std::string::npos) {
+			if (!parseQuery(_path.substr(queryPos + 1)))
+				return false;
+			_path.erase(queryPos);
+		}
+	}
+	catch (const std::exception& e) {
+		return false;
+	}
+	return true;
+}
+
+// Separate the different queryParams and insert them in the _queryMap. & is the separator between different params.
+bool	Request::parseQuery(std::string rawQuery) {
+	try {
+		while (!rawQuery.empty()) {
+			size_t		ampers = rawQuery.find("&");
+			std::string	param = rawQuery.substr(0, ampers);
+			size_t		equal = param.find("=");
+
+			if (equal != std::string::npos) {
+				std::string	key = param.substr(0, equal);
+				std::string value = param.substr(equal + 1);
+				_queryMap[key] = value;
+			}
+			else if (!param.empty())
+				_queryMap[param] = "";
+
+			if (ampers != std::string::npos)
+				rawQuery.erase(0, ampers + 1);
+			else
+				rawQuery.clear();
+		}
+	}
+	catch (const std::exception& e) {
+		return false;
+	}
+	return true;
+}
+//----------------<
+
+
+	//HEADER LINES PARSERS//---------------->
+//Parse to separate the key/value of the _headers
+bool	Request::parseHeaderLine(std::string& line) {
+	size_t	colon = line.find(':');
+	if (colon == std::string::npos)
+		return false;
+
+	std::string	key = line.substr(0, colon);
+	std::string value = line.substr(colon + 1);
+
+	//Removing ' ' and '\r'
+	if (!value.empty() && value[0] == ' ')
+		value.erase(0, 1);
+	if (!value.empty() && value[value.size() - 1] == '\r')
+		value.erase(value.size() - 1);
+
+	_headers[key] = value;
+
+	//Check if it is a multipart header and parse it in such the case (parseMultipart parses header and body at once).
+	if (key == "Content-Type")
+		if (value.find("multipart/form-data") != std::string::npos)
+			if (!parseMultipart(value));
+				return false;
+
+	return true;
+}
+
+//Split the _body in the different parts, separated by _bound, and set _multiBody with them.
+bool	Request::parseMultipart(std::string& multi) {
+	size_t startPart = 0;
+	size_t endPart = 0;
+
+	if (!findBoundary(multi))
+		return false;
+
+	while (endPart = _body.find(_bound, startPart) != std::string::npos) {
+		std::string newPart = _body.substr(startPart, endPart - startPart);
+		if (!newPart.empty())
+			_multiBody.push_back(newPart);
+		startPart = endPart + _bound.size();
+	}
+	return true;
+}
+
+//Set the _bound if it's valid.
+bool	Request::findBoundary(std::string& multi) {
+	size_t	pos = multi.find("boundary=");
+
+	if (pos == std::string::npos)
+		return false;
+	_bound = multi.substr(pos + 9);
+		return true;
+}
+//----------------<
+
+
+	//GETTERS//---------------->
 const std::string&	Request::getMethod() const {
 	return _method;
 }
@@ -138,3 +185,12 @@ const std::string&	Request::getQueryParam(const std::string& key) const {
 		return it->second;
 	return empty;
 }
+
+const std::string&  Request::getBound() const {
+	return _bound;
+}
+
+const std::vector<std::string>& Request::getMultiBody() const {
+	return _multiBody;
+}
+//----------------<

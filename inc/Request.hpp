@@ -4,21 +4,27 @@
 #include <iostream>
 #include <sstream>
 #include <map>
+#include <vector>
 
 class Request
 {
 	private:
 		std::string							_method;
 		std::string							_path;
-		std::map<std::string, std::string>	_queryMap;
 		std::string							_version;
 		std::map<std::string, std::string>	_headers;
 		std::string							_body;
-		size_t								_contentLength;
 
+		size_t								_contentLength;
+		std::string							_bound;
+		std::vector<std::string>			_multiBody;
+		std::map<std::string, std::string>	_queryMap;
+		
 		bool	parsePath();
 		bool	parseQuery(std::string rawQuery);
 		bool	parseHeaderLine(std::string& line);
+		bool	parseMultipart(std::string& multi);
+		bool	findBoundary(std::string& multi);
 
 	public:
 		Request();
@@ -31,6 +37,8 @@ class Request
 		const std::map<std::string, std::string>&	getHeaders() const;
 		const std::string&	getBody() const;
 		const std::string&	getQueryParam(const std::string& key) const;
+		const std::string&  getBound() const;
+		const std::vector<std::string>& getMultiBody() const;
 
 } ;
 
