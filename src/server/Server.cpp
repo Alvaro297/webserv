@@ -69,7 +69,7 @@ void Server::processRequest(int fd, const std::string& fullBuffer)
 	if (extractFullPath(fullBuffer))
 		fullPath = extractFullPath(fullBuffer)->getRoot();
 	else
-		fullPath = "default_root"; //Pendiente de mejora pasar toda la configuracion
+		fullPath = "default_root";
 	Handler hand(fullPath);
 	Response resp = hand.handleRequest(fullBuffer);
 	this->_client[fd].appendWriteBuffer(resp.genResponseString());
