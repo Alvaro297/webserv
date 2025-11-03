@@ -2,6 +2,23 @@
 
 Handler::Handler(const std::string& root) : _root(root) {}
 
+static std::string getMimeTypeFromPath(const std::string& path) {
+	size_t pos = path.rfind('.');
+	if (pos == std::string::npos) return "application/octet-stream";
+	std::string ext = path.substr(pos);
+	if (ext == ".html" || ext == ".htm") return "text/html";
+	if (ext == ".css") return "text/css";
+	if (ext == ".js") return "application/javascript";
+	if (ext == ".json") return "application/json";
+	if (ext == ".png") return "image/png";
+	if (ext == ".jpg" || ext == ".jpeg") return "image/jpeg";
+	if (ext == ".gif") return "image/gif";
+	if (ext == ".svg") return "image/svg+xml";
+	if (ext == ".txt") return "text/plain";
+	if (ext == ".xml") return "application/xml";
+	return "application/octet-stream";
+} //MARIO
+
 // Generate the final path of the file.
 std::string	Handler::buildFilePath(const std::string& rawReq) const {
 	if (rawReq == "/")
@@ -144,7 +161,7 @@ Response	Handler::handleGET(const Request& req) {
 		struct stat s; //Verify path/file availability.
 		if (stat(path.c_str(), &s) != 0 || S_ISDIR(s.st_mode)) {
 			res.setStatus(404, "Not Found");
-			res.setHeader("Content-Type", req.getType());
+		res.setHeader("Content-Type", req.getType());
 			res.setBody("<h1>404 Not Found</h1>");
 			return res;
 		}
@@ -152,7 +169,7 @@ Response	Handler::handleGET(const Request& req) {
 		std::ifstream file(path.c_str(), std::ios::in | std::ios::binary); //Open file in read mode.
 		if (!file.is_open()) {
 			res.setStatus(403, "Forbidden");
-			res.setHeader("Content-Type", req.getType());
+		res.setHeader("Content-Type", req.getType());
 			res.setBody("<h1>403 Forbidden</h1>");
 			return res;
 		}
@@ -162,7 +179,7 @@ Response	Handler::handleGET(const Request& req) {
 		file.close();
 
 		res.setStatus(200, "OK");
-		res.setHeader("Content-Type", req.getType());
+		res.setHeader("Content-Type", getMimeTypeFromPath(path)); //Mario
 		res.setBody(buff.str());
 	}
 	catch (const std::exception& e) {
