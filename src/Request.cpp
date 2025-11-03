@@ -162,7 +162,7 @@ bool	Request::parseHeaderLine(std::string& line) {
 	//Check if it is a multipart header and parse it in such the case (parseMultipart parses header and body at once).
 	if (key == "Content-Type")
 		if (value.find("multipart/form-data") != std::string::npos)
-			if (!parseMultipart(value));
+			if (!parseMultipart(value))
 				return false;
 
 	return true;
@@ -176,7 +176,7 @@ bool	Request::parseMultipart(std::string& multi) {
 	if (!findBoundary(multi))
 		return false;
 
-	while (endPart = _body.find(_bound, startPart) != std::string::npos) {
+	while ((endPart = _body.find(_bound, startPart)) != std::string::npos) {
 		std::string newPart = _body.substr(startPart, endPart - startPart);
 		if (!newPart.empty())
 			_multiBody.push_back(newPart);
