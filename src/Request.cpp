@@ -83,9 +83,9 @@ bool	Request::setFileType() {
 	
 		std::string ext = _path.substr(pos);
 	
-		static const std::map<std::string, std::string>	typeMap = {
+		static const std::pair<std::string, std::string> pairs[] = {
 			std::make_pair(".html", "text/html"),
-			std::make_pair(".htm", ".htm"),
+			std::make_pair(".htm", "text/html"),
 			std::make_pair(".css", "text/css"),
 			std::make_pair(".js", "application/javascript"),
 			std::make_pair(".json", "application/json"),
@@ -97,12 +97,15 @@ bool	Request::setFileType() {
 			std::make_pair(".txt", "text/plain"),
 			std::make_pair(".xml", "application/xml"),
 		};
+
+		static const std::map<std::string, std::string>	typeMap(pairs, pairs + sizeof(pairs) / sizeof(pairs[0])); //Using Iterator constructor with first and last pointers as inputs
 	
 		std::map<std::string, std::string>::const_iterator it = typeMap.find(ext);
-		if (it != typeMap.end())
+		if (it != typeMap.end()) {
 			_fileType = it->second;
 			return true;
-	
+		}
+
 		_fileType = "application/octet-stream";
 	}
 	catch (const std::exception& e) {
