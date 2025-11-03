@@ -2,6 +2,23 @@
 
 Handler::Handler(const std::string& root) : _root(root) {}
 
+static std::string getMimeTypeFromPath(const std::string& path) {
+	size_t pos = path.rfind('.');
+	if (pos == std::string::npos) return "application/octet-stream";
+	std::string ext = path.substr(pos);
+	if (ext == ".html" || ext == ".htm") return "text/html";
+	if (ext == ".css") return "text/css";
+	if (ext == ".js") return "application/javascript";
+	if (ext == ".json") return "application/json";
+	if (ext == ".png") return "image/png";
+	if (ext == ".jpg" || ext == ".jpeg") return "image/jpeg";
+	if (ext == ".gif") return "image/gif";
+	if (ext == ".svg") return "image/svg+xml";
+	if (ext == ".txt") return "text/plain";
+	if (ext == ".xml") return "application/xml";
+	return "application/octet-stream";
+} //MARIO
+
 // Generate the final path of the file.
 std::string	Handler::buildFilePath(const std::string& rawReq) const {
 	if (rawReq == "/")
@@ -13,24 +30,35 @@ std::string	Handler::buildFilePath(const std::string& rawReq) const {
 bool	saveMultipartFile(std::string part) {
 	try {
 		size_t	dispStart = part.find("Content-Disposition:");
+
 		size_t	nameStart = part.find("name=\"", dispStart);
+
+		if (nameStart == std::string::npos) //There is no "name"
+			return false; //RFC says parameter "name=" must exist, so I consider this as an error
+
+		size_t	nameEnd = part.find("\"", nameStart + 6);
+		std::string	name =part.substr(nameStart + 6, nameEnd - (nameStart + 6));
+		
+		size_t	contStart = part.find("\r\n\r\n");
+		if (contStart == std::string::npos) //No content, so must be a format error
+			return false;
+		contStart += 4; //Content starts after double jump
+
 		size_t	filenameStart = part.find("filename=\"", dispStart);
 		
-		if (filenameStart == std::string::npos) //Not a file, so nothing to do
-		return ;
-		
+		if (filenameStart == std::string::npos) { //Not a file, i don't think we need to handle this kind of forms (without archive)
+			/* std::string nameValue = part.substr(contStart);
+			if (nameValue.size() >= 2 && nameValue[nameValue.size() - 2] == '\r')
+				nameValue.erase(nameValue.size() - 2); */
+			return true;
+		}
+
 		size_t	filenameEnd = part.find("\"", filenameStart + 10);
 		std::string	fileName = part.substr(filenameStart + 10, filenameEnd - (filenameStart + 10));
 		
-		size_t	contStart = part.find("\r\n\r\n");
-		if (contStart == std::string::npos) //No content, so nothing to do
-		return ;
-		contStart += 4; //Content starts after double jump
-		
 		std::string	content = part.substr(contStart); //String with all the content
 		if (content.size() >= 2 && content[content.size() - 2] == '\r')
-		content.erase(content.size() - 2); //Remove last "\r\n"
-		
+			content.erase(content.size() - 2); //Remove last "\r\n"
 		
 		std::ofstream out(("uploads/" + fileName).c_str(), std::ios::binary); //Open/create a file with that name in uploads directory.
 		out.write(content.c_str(), content.size()); //Use write instead of <<, because binaries can have a "\0" inside the text.
@@ -52,7 +80,7 @@ Response Handler::handleMULT(const Request& req) {
 
 		for (size_t i = 0; i < mBody.size(); ++i) {
 			if (!saveMultipartFile(mBody[i]))
-				throw ;
+				throw std::runtime_error("Bad multipart");
 		}
 		res.setStatus(200, "OK");
 		res.setHeader("Content-Type", req.getType());
@@ -133,7 +161,7 @@ Response	Handler::handleGET(const Request& req) {
 		struct stat s; //Verify path/file availability.
 		if (stat(path.c_str(), &s) != 0 || S_ISDIR(s.st_mode)) {
 			res.setStatus(404, "Not Found");
-			res.setHeader("Content-Type", req.getType());
+		res.setHeader("Content-Type", req.getType());
 			res.setBody("<h1>404 Not Found</h1>");
 			return res;
 		}
@@ -141,7 +169,7 @@ Response	Handler::handleGET(const Request& req) {
 		std::ifstream file(path.c_str(), std::ios::in | std::ios::binary); //Open file in read mode.
 		if (!file.is_open()) {
 			res.setStatus(403, "Forbidden");
-			res.setHeader("Content-Type", req.getType());
+		res.setHeader("Content-Type", req.getType());
 			res.setBody("<h1>403 Forbidden</h1>");
 			return res;
 		}
@@ -151,7 +179,7 @@ Response	Handler::handleGET(const Request& req) {
 		file.close();
 
 		res.setStatus(200, "OK");
-		res.setHeader("Content-Type", req.getType());
+		res.setHeader("Content-Type", getMimeTypeFromPath(path)); //Mario
 		res.setBody(buff.str());
 	}
 	catch (const std::exception& e) {
