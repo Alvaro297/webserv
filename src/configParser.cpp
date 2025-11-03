@@ -5,6 +5,10 @@
 #include <cctype>
 #include <iostream>
 #include <cstdlib>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <errno.h>
+#include <string.h>
 
 
 std::string ConfigParser::s_lastError;
@@ -94,6 +98,34 @@ bool ConfigParser::fillServer(const std::string& block, ServerConfigStruct& serv
 		}
 		else if (key == "upload_store") {
 			lineStream >> server.upload_store;
+			// Normalize: remove trailing slash (unless it's root "/")
+			if (!server.upload_store.empty() && server.upload_store.size() > 1 && server.upload_store[server.upload_store.size() - 1] == '/')
+				server.upload_store.erase(server.upload_store.size() - 1);
+			// Basic validation: reject traversal
+			if (server.upload_store.find("..") != std::string::npos) {
+				s_lastError = "Invalid upload_store path (contains '..'): " + server.upload_store;
+				return false;
+			}
+			// If upload_store set, try to create directory (mkdir -p behaviour)
+			if (!server.upload_store.empty()) {
+				// recursive mkdir
+				std::string path = server.upload_store;
+				std::string sub;
+				for (size_t pos = 0; pos < path.size(); ) {
+					size_t next = path.find('/', pos);
+					if (next == std::string::npos) next = path.size();
+					sub = path.substr(0, next);
+					if (sub.empty()) { pos = next + 1; continue; }
+					if (mkdir(sub.c_str(), 0755) != 0) {
+						if (errno != EEXIST) {
+							std::cerr << "Warning: could not create upload_store directory '" << sub << "': " << strerror(errno) << std::endl;
+							// don't hard-fail on mkdir; leave path as-is
+							break;
+						}
+					}
+					pos = next + 1;
+				}
+			}
 		}
 		else if (key == "upload_enable") {
 			std::string val; lineStream >> val; server.upload_enable = (val == "on" || val == "true");
@@ -262,6 +294,30 @@ bool ConfigParser::fillLocation(const std::string& block, LocationConfigStruct& 
 			std::string val; ls >> val; location.upload_enable = (val == "on" || val == "true");
 		} else if (key == "upload_store") {
 			ls >> location.upload_store;
+			// Normalize remove trailing slash
+			if (!location.upload_store.empty() && location.upload_store.size() > 1 && location.upload_store[location.upload_store.size() - 1] == '/')
+				location.upload_store.erase(location.upload_store.size() - 1);
+			if (location.upload_store.find("..") != std::string::npos) {
+				s_lastError = "Invalid upload_store path in location (contains '..'): " + location.upload_store;
+				return false;
+			}
+			if (!location.upload_store.empty()) {
+				std::string path = location.upload_store;
+				std::string sub;
+				for (size_t pos = 0; pos < path.size(); ) {
+					size_t next = path.find('/', pos);
+					if (next == std::string::npos) next = path.size();
+					sub = path.substr(0, next);
+					if (sub.empty()) { pos = next + 1; continue; }
+					if (mkdir(sub.c_str(), 0755) != 0) {
+						if (errno != EEXIST) {
+							std::cerr << "Warning: could not create upload_store directory '" << sub << "': " << strerror(errno) << std::endl;
+							break;
+						}
+					}
+					pos = next + 1;
+				}
+			}
 		} else if (key == "cgi_extension") {
 			std::string ext, bin; ls >> ext >> bin; if (!ext.empty()) location.cgi_extensions[ext] = bin;
 		} else if (key == "cgi_enable") {
