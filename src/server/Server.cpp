@@ -26,6 +26,17 @@ Server& Server::operator=(const Server& other)
 
 Server::~Server() {}
 
+
+static std::string intToString(const int port)
+{
+	std::stringstream ss;
+	std::string result;
+	
+	ss << port;
+	result = ss.str();
+	return result;
+}
+
 ServerConfig* Server::extractFullPath(std::string fullBuffer)
 {
 	int port;
@@ -65,11 +76,25 @@ ServerConfig* Server::extractFullPath(std::string fullBuffer)
 void Server::processRequest(int fd, const std::string& fullBuffer)
 {
 	std::string fullPath;
+	Request req = Request();
+	ServerConfig* config = extractFullPath(fullBuffer);
 
-	if (extractFullPath(fullBuffer))
+	if (config)
 		fullPath = extractFullPath(fullBuffer)->getRoot();
 	else
-		fullPath = "default_root"; //Pendiente de mejora pasar toda la configuracion
+		fullPath = "default_root";
+	if (req.parseRequestValidity(fullPath))
+	{
+		size_t extensionDot = req.getPath().find('.');
+		std::string extension = req.getPath().substr(extensionDot);
+		if (config->supportsExtension(extension))
+		{
+			CGIHandler cgiHandler(config->getCgiExtensions(), fullPath, config->getServerName(), intToString(config->getPort()));
+			Response resp = cgiHandler.handle(req);
+			this->_client[fd].appendWriteBuffer(resp.genResponseString());
+			return;
+		}
+	}
 	Handler hand(fullPath);
 	Response resp = hand.handleRequest(fullBuffer);
 	this->_client[fd].appendWriteBuffer(resp.genResponseString());
@@ -177,6 +202,27 @@ static bool lineFinish(std::string line)
 	return false;
 }
 
+size_t getMaxBodySizeLocation(ServerConfig *config, std::string currentBuffer)
+{
+	size_t firstSpace = currentBuffer.find(" ");
+	size_t secondSpace = currentBuffer.find(" ", firstSpace + 1);
+	std::string path = currentBuffer.substr(firstSpace + 1, secondSpace - firstSpace - 1);
+	size_t bodySize = config->getClientMaxBodySize();
+	std::string pathLocation;
+	size_t longPath = 0;
+
+	for (size_t i = 0; i < config->getLocations().size(); i++)
+	{
+		pathLocation = config->getLocations()[i].path;
+		if (path.substr(0, pathLocation.length()) == pathLocation && longPath < pathLocation.length())
+		{
+			//bodySize = config->getLocations()[i].bodySize;
+			longPath = pathLocation.length();
+		}
+	}
+	return bodySize;
+}
+
 void Server::readClient(int fds)
 {
 	std::string currentBuffer = this->_client[fds].getReadBuffer();
@@ -186,7 +232,7 @@ void Server::readClient(int fds)
 	{
 		ServerConfig* config = extractFullPath(currentBuffer);
 		if (config != NULL)
-			maxBodySize = config->getClientMaxBodySize(); //TODO: Implement maxBodySize all servers
+			maxBodySize = getMaxBodySizeLocation(config, currentBuffer);
 	}
 
 	if (this->_client[fds].getReadBuffer().size() > maxBodySize)

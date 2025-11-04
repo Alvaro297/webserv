@@ -1,5 +1,6 @@
 #ifndef SERVER_HPP
 # define SERVER_HPP
+# include "CGIHandler.hpp"
 # include "ServerConfig.hpp"
 # include <iostream>
 # include <vector>
