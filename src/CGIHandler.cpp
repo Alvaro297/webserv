@@ -135,7 +135,7 @@ Response CGIHandler::handle(const Request& req) {
     std::istringstream hs(rawHeaders);
     std::string line; int statusCode = 200; std::string statusMsg = "OK";
     while (std::getline(hs, line)) {
-        if (!line.empty() && line.back() == '\r') line.pop_back();
+        if (!line.empty() && line[line.size() - 1] == '\r') line.erase(line.size() - 1);
         if (line.empty()) continue;
         size_t c = line.find(':');
         if (c == std::string::npos) continue;
