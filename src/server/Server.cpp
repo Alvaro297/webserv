@@ -26,6 +26,17 @@ Server& Server::operator=(const Server& other)
 
 Server::~Server() {}
 
+
+static std::string intToString(const int port)
+{
+	std::stringstream ss;
+	std::string result;
+	
+	ss << port;
+	result = ss.str();
+	return result;
+}
+
 ServerConfig* Server::extractFullPath(std::string fullBuffer)
 {
 	int port;
@@ -65,11 +76,25 @@ ServerConfig* Server::extractFullPath(std::string fullBuffer)
 void Server::processRequest(int fd, const std::string& fullBuffer)
 {
 	std::string fullPath;
+	Request req = Request();
+	ServerConfig* config = extractFullPath(fullBuffer);
 
-	if (extractFullPath(fullBuffer))
+	if (config)
 		fullPath = extractFullPath(fullBuffer)->getRoot();
 	else
 		fullPath = "default_root";
+	if (req.parseRequestValidity(fullPath))
+	{
+		size_t extensionDot = req.getPath().find('.');
+		std::string extension = req.getPath().substr(extensionDot);
+		if (config->supportsExtension(extension))
+		{
+			CGIHandler cgiHandler(config->getCgiExtensions(), fullPath, config->getServerName(), intToString(config->getPort()));
+			Response resp = cgiHandler.handle(req);
+			this->_client[fd].appendWriteBuffer(resp.genResponseString());
+			return;
+		}
+	}
 	Handler hand(fullPath);
 	Response resp = hand.handleRequest(fullBuffer);
 	this->_client[fd].appendWriteBuffer(resp.genResponseString());
