@@ -23,8 +23,13 @@ Response CGIHandler::buildErrorResponse(int code, const std::string& message) co
     return r;
 }
 
+static char _env_map_char(char c) {
+    if (c == '-') return '_';
+    return static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+}
+
 static std::string to_env_name(std::string s) {
-    std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c){ return (c=='-')? '_': std::toupper(c); });
+    std::transform(s.begin(), s.end(), s.begin(), _env_map_char);
     return s;
 }
 
@@ -135,7 +140,7 @@ Response CGIHandler::handle(const Request& req) {
     std::istringstream hs(rawHeaders);
     std::string line; int statusCode = 200; std::string statusMsg = "OK";
     while (std::getline(hs, line)) {
-        if (!line.empty() && line.back() == '\r') line.pop_back();
+        if (!line.empty() && line[line.size() - 1] == '\r') line.erase(line.size() - 1, 1);
         if (line.empty()) continue;
         size_t c = line.find(':');
         if (c == std::string::npos) continue;
