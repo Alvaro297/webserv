@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <title>Upload - Dynamic Root</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <h1>Subir archivo (multipart)</h1>
+    <p>El formulario envía al endpoint <code>/upload</code> usando multipart/form-data.</p>
+    <form action="/upload" method="post" enctype="multipart/form-data">
+        <label>Fichero: <input type="file" name="file" required></label>
+        <br><br>
+        <input type="submit" value="Upload">
+    </form>
+    <p><a href="/dynamic_root/">Volver</a></p>
+</body>
+</html>

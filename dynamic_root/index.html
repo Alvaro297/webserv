@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <title>42 webserv — Página demostrativa</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 1.5rem; color:#222 }
+        h1 { margin-bottom: .5rem }
+        section { border: 1px solid #e0e0e0; padding: 1rem; margin-bottom: 1rem; border-radius:6px; background:#fff }
+        .row { display:flex; gap:1rem; flex-wrap:wrap }
+        .col { flex:1 1 320px }
+        button { padding:.4rem .6rem }
+        #log { white-space: pre-wrap; background:#f8f8f8; padding:1rem; border-radius:6px; max-height: 250px; overflow:auto }
+        code { background:#f3f3f3; padding:2px 6px; border-radius:4px }
+        ul.checklist { margin:0; padding-left:1.2rem }
+    </style>
+</head>
+<body>
+    <h1>42 webserv — Demo completa</h1>
+    <p>Esta página centraliza pruebas para comprobar los requisitos típicos del proyecto <strong>webserv</strong> de 42. Sigue los botones y observa la salida en la zona "Salida".</p>
+
+    <section>
+        <h2>Checklist de requisitos</h2>
+        <ul class="checklist">
+            <li>Servir archivos estáticos (GET)</li>
+            <li>Subida multipart/form-data (POST)</li>
+            <li>Manejo de métodos POST y DELETE</li>
+            <li>CGI: ejecución de scripts (por ejemplo <code>hello.py</code>)</li>
+            <li>Autoindex / listado de directorio (si está habilitado por config)</li>
+            <li>Páginas de error personalizadas, redirecciones y encabezados correctos</li>
+        </ul>
+        <p>Notas: asegúrate de tener configurado en tu servidor (ServerConfig) la asociación de extensiones CGI (.py -&gt; /usr/bin/python3) y <code>cgi_enable</code> si quieres probar CGI.</p>
+    </section>
+
+    <section class="row">
+        <div class="col">
+            <h3>1) Pruebas de GET estático</h3>
+            <p>Archivos de ejemplo:</p>
+            <ul>
+                <li><a href="/dynamic_root/test-file.txt">/dynamic_root/test-file.txt</a> (crea/borra con los botones abajo)</li>
+                <li><a href="/dynamic_root/upload.html">/dynamic_root/upload.html</a> (form multipart)</li>
+                <li><a href="/dynamic_root/images/sample.jpg">/dynamic_root/images/sample.jpg</a></li>
+                <li><a href="/redirect.html">/redirect.html</a> (prueba de redirección)</li>
+            </ul>
+        </div>
+        <div class="col">
+            <h3>2) Subida multipart (form)</h3>
+            <p>Usa el formulario para enviar un archivo al endpoint <code>/upload</code> (Handler guarda en <code>uploads/</code>).</p>
+            <p><a href="/dynamic_root/upload.html">Abrir formulario de upload</a></p>
+        </div>
+    </section>
+
+    <section class="row">
+        <div class="col">
+            <h3>3) CGI</h3>
+            <p>Script CGI de ejemplo: <code>/dynamic_root/cgi-bin/hello.py</code></p>
+            <p><a href="/dynamic_root/cgi-bin/hello.py" target="_blank">Ejecutar hello.py (GET)</a></p>
+        </div>
+        <div class="col">
+            <h3>4) Autoindex &amp; directorios</h3>
+            <p>Si el servidor tiene autoindex para <code>/dynamic_root/</code>, visitar el directorio mostrará listado de archivos y la carpeta <code>uploads/</code>.</p>
+            <p><a href="/dynamic_root/">/dynamic_root/ (dir)</a></p>
+        </div>
+    </section>
+
+    <section>
+        <h3>5) Crear / borrar recursos (POST / DELETE)</h3>
+        <p>Usa estos botones para crear o borrar <code>/dynamic_root/test-file.txt</code>. La respuesta del servidor se muestra abajo.</p>
+        <div style="margin-bottom:.6rem">
+            <button id="btnCreate">Crear test-file.txt (POST)</button>
+            <button id="btnDelete">Borrar test-file.txt (DELETE)</button>
+            <button id="btnCGI">Llamar CGI (fetch)</button>
+            <button id="btnListUploads">Listar uploads (HEAD/GET)</button>
+        </div>
+        <div>
+            <strong>Salida:</strong>
+            <div id="log">Esperando acciones...</div>
+        </div>
+    </section>
+
+    <section>
+        <h3>6) Errores y redirecciones</h3>
+        <p>Prueba 404 con un recurso inexistente: <a href="/dynamic_root/no-existe.html">no-existe.html</a></p>
+        <p>Redirección de ejemplo: <a href="/redirect.html">/redirect.html</a> (debe devolver 3xx si está configurada en confs).</p>
+    </section>
+
+    <section>
+        <h3>Instrucciones para el examinador</h3>
+        <ol>
+            <li>Asegúrate de que el server usa como root <code>default_root</code> o que apunta correctamente a <code>dynamic_root</code>.</li>
+            <li>Habilita en la configuración: <code>cgi_enable on</code> y añade en <code>cgi_extensions</code> la asociación <code>.py =&gt; /usr/bin/python3</code> (o ruta a python3 en tu sistema).</li>
+            <li>Comprueba que <code>uploads/</code> está presente en la raíz del proyecto para que las subidas se guarden.</li>
+            <li>Probar: GET estático, POST multipart (upload), POST para crear recursos, DELETE para borrar, ejecución de CGI, autoindex y manejo de errores.</li>
+        </ol>
+    </section>
+
+    <script>
+    function log(msg){ document.getElementById('log').textContent = msg; }
+
+    function handleFetch(url, opts){
+        return fetch(url, opts).then(function(res){
+            return res.text().then(function(text){
+                log('HTTP ' + res.status + ' ' + res.statusText + '\n' + text);
+                return {res:res, text:text};
+            });
+        }).catch(function(err){ log('Fetch error: ' + err); throw err; });
+    }
+
+    document.getElementById('btnCreate').addEventListener('click', function(){
+        handleFetch('/dynamic_root/test-file.txt', { method: 'POST', body: 'Contenido de prueba creado por el demo' });
+    });
+
+    document.getElementById('btnDelete').addEventListener('click', function(){
+        handleFetch('/dynamic_root/test-file.txt', { method: 'DELETE' });
+    });
+
+    document.getElementById('btnCGI').addEventListener('click', function(){
+        handleFetch('/dynamic_root/cgi-bin/hello.py', { method: 'GET' });
+    });
+
+    document.getElementById('btnListUploads').addEventListener('click', function(){
+        // Intentar HEAD primero, fallback a GET
+        fetch('/uploads/', { method: 'GET' }).then(function(res){
+            log('HTTP ' + res.status + ' ' + res.statusText + '\n(Respuesta a GET /uploads/)');
+            return res.text();
+        }).then(function(text){
+            // mostrar solo primeros 1000 caracteres para no recargar
+            log('HTTP ' + '' + '\n' + (text ? text.substr(0,1000) : '(sin cuerpo)'));
+        }).catch(function(err){ log('Error list uploads: ' + err); });
+    });
+    </script>
+
+</body>
+</html>

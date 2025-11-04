@@ -1,0 +1,35 @@
+#ifndef CGIHANDLER_HPP
+#define CGIHANDLER_HPP
+
+#include <string>
+#include <vector>
+#include <map>
+#include "Request.hpp"
+#include "Response.hpp"
+
+class CGIHandler {
+public:
+    CGIHandler(const std::map<std::string, std::string>& cgiExts, const std::string& root,
+               const std::string& serverName = "localhost", const std::string& serverPort = "80");
+
+    // Comprueba si una extensión (incluyendo el punto, p.ej. ".py") está registrada como CGI
+    bool supportsExtension(const std::string& ext) const;
+
+    // Ejecuta el script CGI referido por la request. Devuelve un Response generado a partir
+    // de la salida del CGI o de un error si algo falla.
+    Response handle(const Request& req);
+
+private:
+    std::map<std::string, std::string> _cgiExts; // mapping .php -> /usr/bin/php-cgi, etc.
+    std::string _root;
+    std::string _serverName;
+    std::string _serverPort;
+
+    Response buildErrorResponse(int code, const std::string& message) const;
+    std::vector<std::string> buildEnv(const Request& req, const std::string& scriptPath) const;
+    int executeCGIProcess(const std::string& scriptPath, const std::string& interpreter,
+                          const std::vector<std::string>& env, const std::string& body,
+                          std::string& out) const;
+};
+
+#endif

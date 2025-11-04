@@ -10,6 +10,7 @@ SRCS := main.cpp \
 		Handler.cpp \
 		Request.cpp \
 		Response.cpp \
+        CGIHandler.cpp \
         server/ServerConfig.cpp \
         server/Server.cpp \
 		server/Client.cpp \
