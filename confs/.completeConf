@@ -62,9 +62,6 @@ server {
         methods POST PUT;
         upload_enable on;
         upload_store /var/www/ejemplo/uploads;  # sobreescribe si quisieras
-        # Respuesta recomendada de tu server:
-        # - 201 Created con Location: /uploads/<nombre> si creas recurso nuevo
-        # - 204 No Content si sobreescribes sin contenido de vuelta
     }
 
     # 5) API con métodos concretos

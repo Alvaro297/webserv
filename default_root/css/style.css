@@ -28,3 +28,16 @@ html,body{height:100%;margin:0;font-family:Inter, Roboto, Arial, sans-serif;back
 /* faux-video container */
 .faux-video{width:100%;height:320px;border-radius:10px;overflow:hidden;background:#000;display:flex;align-items:center;justify-content:center}
 .faux-video svg{width:100%;height:100%;display:block}
+
+/* Styles for dynamic_root demo page */
+section { background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border: 1px solid rgba(255,255,255,0.03); padding: 18px; margin-bottom: 18px; border-radius: 10px; }
+.row { display:flex; gap:16px; flex-wrap:wrap }
+.col { flex:1 1 320px }
+button { background: var(--accent); color: #06202b; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight:600 }
+button:hover { filter: brightness(0.95); }
+#log { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.03); padding: 12px; border-radius: 8px; color: var(--muted); min-height: 80px; }
+code { background: rgba(255,255,255,0.03); padding: 2px 6px; border-radius: 6px; color: #dbeafe }
+a { color: var(--accent); }
+
+/* small screens */
+@media (max-width:720px){ .row{flex-direction:column} }
