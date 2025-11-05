@@ -26,7 +26,8 @@ private:
     std::string _serverPort;
 
     Response buildErrorResponse(int code, const std::string& message) const;
-    std::vector<std::string> buildEnv(const Request& req, const std::string& scriptPath) const;
+    // pathInfo: portion of the URL after the script filename (e.g. for /a/script.py/foo -> /foo)
+    std::vector<std::string> buildEnv(const Request& req, const std::string& scriptPath, const std::string& pathInfo = std::string()) const;
     int executeCGIProcess(const std::string& scriptPath, const std::string& interpreter,
                           const std::vector<std::string>& env, const std::string& body,
                           std::string& out) const;

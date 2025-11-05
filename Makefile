@@ -11,9 +11,11 @@ SRCS := main.cpp \
 		Request.cpp \
 		Response.cpp \
         CGIHandler.cpp \
-        server/ServerConfig.cpp \
+        autoindex.cpp \
+		server/ServerConfig.cpp \
         server/Server.cpp \
 		server/Client.cpp \
+		
 
 SRCS := $(addprefix $(SRC_DIR)/, $(SRCS))
 OBJS := $(addprefix $(OBJ_DIR)/, $(SRCS:$(SRC_DIR)/%.cpp=%.o))
