@@ -52,11 +52,13 @@ ServerConfig* Server::extractFullPath(std::string fullBuffer)
 		if (dotsPosition != std::string::npos)
 		{
 			host = line.substr(0, dotsPosition);
+			if (host == "localhost")
+				host = "127.0.0.1";
 			port = std::atoi(line.substr(dotsPosition + 1).c_str()); 
 		}
 		else
 		{
-			host = "localhost";
+			host = "127.0.0.1";
 			port = 80;
 		}
 	}
@@ -82,7 +84,7 @@ void Server::processRequest(int fd, const std::string& fullBuffer)
 	if (config)
 		fullPath = extractFullPath(fullBuffer)->getRoot();
 	else
-		fullPath = "default_root";
+		fullPath = "dynamic_root2";
 	if (req.parseRequestValidity(fullPath))
 	{
 		size_t extensionDot = req.getPath().find('.');
