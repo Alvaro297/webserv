@@ -386,7 +386,11 @@ void Server::run()
 			// Esto es el timeout modificarlo a vuestra medida para si quereis seguir o no (Actualmente en 12 sec)
 			if ((now - it->second.getLastActivity()) > 1200)
 			{
-				std::cout << "Timeout of conexion 408" << std::endl; //Para Dani
+				std::string response408 = 
+					"HTTP/1.1 408 Request Timeout\r\n"
+					"Connection: close\r\n"
+					"Content-Length: 0\r\n\r\n";
+				this->_client[it->first].appendWriteBuffer(response408);
 				close(it->first);
 				this->_client.erase(it++);
 			}
