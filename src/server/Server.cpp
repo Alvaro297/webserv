@@ -37,6 +37,18 @@ static std::string intToString(const int port)
 	return result;
 }
 
+std::string generateErrorPage(const int errorCode, const std::string bodyError)
+{
+	std::ostringstream page;
+	
+	page << "<html>\n"
+		<<"<head><title>" << errorCode << " " << bodyError << "</title></head>\n"
+		<< "<body>"
+		<<"<center><h1>" << errorCode << " " << bodyError << "</center></h1>"
+		<<"</body>\n</html>";
+	return page.str();
+}
+
 ServerConfig* Server::extractFullPath(std::string fullBuffer)
 {
 	int port;
@@ -68,9 +80,7 @@ ServerConfig* Server::extractFullPath(std::string fullBuffer)
 	
 	std::map<std::string, Listeners>::iterator it = _listeners.find(fullhost);
 	if (it != _listeners.end() && !it->second.servers.empty())
-	{
 		return &it->second.servers[0];
-	}
 	return NULL;
 }
 
@@ -84,7 +94,7 @@ void Server::processRequest(int fd, const std::string& fullBuffer)
 	if (config)
 		fullPath = extractFullPath(fullBuffer)->getRoot();
 	else
-		fullPath = "dynamic_root2";
+		fullPath = "dynamic_root";
 	if (req.parseRequestValidity(fullPath))
 	{
 		size_t extensionDot = req.getPath().find('.');
@@ -99,7 +109,10 @@ void Server::processRequest(int fd, const std::string& fullBuffer)
 	}
 	Handler hand(fullPath);
 	Response resp = hand.handleRequest(fullBuffer);
-	this->_client[fd].appendWriteBuffer(resp.genResponseString());
+	if (resp.getError() != 0)
+		this->_client[fd].appendWriteBuffer(generateErrorPage(resp.getError(), resp.getBody()));
+	else
+		this->_client[fd].appendWriteBuffer(resp.genResponseString());
 }
 
 void Server::createListener(const ServerConfig& config, const std::string& fullhost)
@@ -168,7 +181,7 @@ static std::string whatMethod(std::string line)
 
 	typeMethod = line.substr(0, firstSpace);
 	if (typeMethod != "POST" || typeMethod != "GET"
-		|| typeMethod != "DELETE")
+		|| typeMethod != "DELETE" || typeMethod != "FETCH")
 		return "GET";
 	return typeMethod;
 }
@@ -239,10 +252,7 @@ void Server::readClient(int fds)
 
 	if (this->_client[fds].getReadBuffer().size() > maxBodySize)
 	{
-		std::string response = 
-			"HTTP/1.1 413 Payload Too Large\r\n"
-			"Content-Length: 0\r\n"
-			"Connection: close\r\n\r\n";
+		std::string response = generateErrorPage(413, "Payload Too Large");
 		this->_client[fds].clearReadBuffer();
 		this->_client[fds].appendWriteBuffer(response);
 		closeClient(fds, "Request too large");
@@ -295,15 +305,9 @@ void Server::acceptSocket(int fds)
 	fcntl(client_fd, F_SETFL, O_NONBLOCK);
 	if (this->_client.size() >= 1000)
 	{
-		std::string response = 
-			"HTTP/1.1 503 Service Unavailable\r\n"
-			"Content-Type: text/plain\r\n"
-			"Content-Length: 21\r\n"
-			"Retry-After: 60\r\n"
-			"Connection: close\r\n\r\n"
-			"Service Unavailable";
-		
-		send(client_fd, response.c_str(), response.size(), 0);
+		std::string response503 = generateErrorPage(503, "Service Unavailable");
+		this->_client[client_fd].appendWriteBuffer(response503);
+		send(client_fd, response503.c_str(), response503.size(), 0);
 		close(client_fd);
 		return;
 	}
@@ -386,10 +390,7 @@ void Server::run()
 			// Esto es el timeout modificarlo a vuestra medida para si quereis seguir o no (Actualmente en 12 sec)
 			if ((now - it->second.getLastActivity()) > 1200)
 			{
-				std::string response408 = 
-					"HTTP/1.1 408 Request Timeout\r\n"
-					"Connection: close\r\n"
-					"Content-Length: 0\r\n\r\n";
+				std::string response408 = generateErrorPage(408, "Request Timeout");
 				this->_client[it->first].appendWriteBuffer(response408);
 				close(it->first);
 				this->_client.erase(it++);

@@ -12,14 +12,20 @@ class Response
 		std::string	_statusMessage;
 		std::map<std::string, std::string>	_headers;
 		std::string	_body;
+		int			_error;
 
-		public:
+		void		setError(const int error);
+
+	public:
 		Response();
 		
 		std::string	genResponseString();
-		void setStatus(int code, const std::string& msg);
-		void setHeader(const std::string& key, const std::string& value);
-		void setBody(const std::string& body);
+		void		setStatus(int code, const std::string& msg);
+		void		setHeader(const std::string& key, const std::string& value);
+		void		setBody(const std::string& body);
+
+		const std::string	getBody();
+		const int			getError();
 
 } ;
 
