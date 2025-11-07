@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+    <header class="top-bar">
+        <a href="../index.html" class="back-button">← Back</a>
+        <h1 class="title">Login</h1>
+    </header>
+
+    <main class="container">
+        <form action="test.py" method="POST">
+            <label for="username" class="input-label">Username:</label>
+            <input type="text" name="username" id="username" placeholder="Enter username" required>
+
+            <label for="password" class="input-label">Password:</label>
+            <input type="password" name="password" id="password" placeholder="Enter password" required>
+
+            <button type="submit" class="login-btn">Login</button>
+        </form>
+    </main>
+    <script>
+        // Función para leer cookie
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+
+        // Aplicar cookie "color" al fondo
+        const color = getCookie("color");
+        if (color) {
+            document.body.style.backgroundColor = color;
+        }
+    </script>
+</body>
+</html>
