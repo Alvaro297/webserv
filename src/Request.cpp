@@ -56,62 +56,56 @@ bool	Request::parseRequestValidity(const std::string& rawReq) {
 	//PATH PARSERS//---------------->
 // Parse the path in case there are query strings on it (separating actual _path and _queryMap).
 bool	Request::parsePath() {
-	try {
-		size_t	queryPos = _path.find("?");
-		if (queryPos != std::string::npos) {
-			if (!parseQuery(_path.substr(queryPos + 1)))
-				return false;
-			_path.erase(queryPos);
-		}
-		setFileType();
+	size_t	queryPos = _path.find("?");
+
+	if (queryPos != std::string::npos) {
+		if (!parseQuery(_path.substr(queryPos + 1)))
+			return false;
+		_path.erase(queryPos);
 	}
-	catch (const std::exception& e) {
-		return false;
-	}
+	setFileType();
+
 	return true;
 }
 
-//Determine the type of file and save it for later use.
-bool	Request::setFileType() {
-	try {
-		size_t pos = _path.rfind('.');
-	
-		if (pos == std::string::npos) {
-			_fileType = "application/octet-stream";
-			return true;
-		}
-	
-		std::string ext = _path.substr(pos);
-	
-		static const std::pair<std::string, std::string> pairs[] = {
-			std::make_pair(".html", "text/html"),
-			std::make_pair(".htm", "text/html"),
-			std::make_pair(".css", "text/css"),
-			std::make_pair(".js", "application/javascript"),
-			std::make_pair(".json", "application/json"),
-			std::make_pair(".png", "image/png"),
-			std::make_pair(".jpg", "image/jpeg"),
-			std::make_pair(".jpeg", "image/jpeg"),
-			std::make_pair(".gif", "image/gif"),
-			std::make_pair(".svg", "image/svg+xml"),
-			std::make_pair(".txt", "text/plain"),
-			std::make_pair(".xml", "application/xml"),
-		};
+// Determine the type of file and save it for later use.
+void	Request::setFileType() {
+	size_t pos = _path.rfind('.');
 
-		static const std::map<std::string, std::string>	typeMap(pairs, pairs + sizeof(pairs) / sizeof(pairs[0])); //Using Iterator constructor with first and last pointers as inputs
-	
-		std::map<std::string, std::string>::const_iterator it = typeMap.find(ext);
-		if (it != typeMap.end()) {
-			_fileType = it->second;
-			return true;
-		}
-
+	if (pos == std::string::npos) {
 		_fileType = "application/octet-stream";
+		return ;
 	}
-	catch (const std::exception& e) {
-		return false;
-	}
-	return true;
+
+	std::string ext = _path.substr(pos);
+
+	_fileType = getMimeType(ext);
+}
+
+// Functionality to store all types info, and returns actual response type
+std::string Request::getMimeType(const std::string& ext) {
+	static const std::pair<std::string, std::string> pairs[] = {
+		std::make_pair(".html", "text/html"),
+		std::make_pair(".htm", "text/html"),
+		std::make_pair(".css", "text/css"),
+		std::make_pair(".js", "application/javascript"),
+		std::make_pair(".json", "application/json"),
+		std::make_pair(".png", "image/png"),
+		std::make_pair(".jpg", "image/jpeg"),
+		std::make_pair(".jpeg", "image/jpeg"),
+		std::make_pair(".gif", "image/gif"),
+		std::make_pair(".svg", "image/svg+xml"),
+		std::make_pair(".txt", "text/plain"),
+		std::make_pair(".xml", "application/xml"),
+	};
+	
+	static const std::map<std::string, std::string>	typeMap(pairs, pairs + sizeof(pairs) / sizeof(pairs[0])); //Using Iterator constructor with first and last pointers as inputs
+
+	std::map<std::string, std::string>::const_iterator it = typeMap.find(ext);
+	if (it != typeMap.end())
+		return it->second;
+
+	return "application/octet-stream";
 }
 
 // Separate the different queryParams and insert them in the _queryMap. & is the separator between different params.

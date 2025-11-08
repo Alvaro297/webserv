@@ -6,10 +6,13 @@
 #include <sys/stat.h>
 #include "Request.hpp"
 #include "Response.hpp"
+#include "FillResp.hpp"
+#include "ServerConfig.hpp"
 
 class Handler {
 	private:
-		std::string	_root;
+		std::string		_root;
+		ServerConfig	_conf;
 		
 		Response	handleGET(const Request& req);
 		Response	handlePOST(const Request& req);

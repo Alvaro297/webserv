@@ -26,7 +26,9 @@ class Request
 		bool	parseHeaderLine(std::string& line);
 		bool	parseMultipart(std::string& multi);
 		bool	findBoundary(std::string& multi);
-		bool	setFileType();
+
+		void	setFileType();
+		static std::string	getMimeType(const std::string&);
 
 	public:
 		Request();

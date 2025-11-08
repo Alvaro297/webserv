@@ -1,8 +1,8 @@
 #include "../inc/Handler.hpp"
 
-Handler::Handler(const std::string& root) : _root(root) {}
+Handler::Handler(const std::string& root, const ServerConfig& conf) : _root(root), _conf(conf) {}
 
-static std::string getMimeTypeFromPath(const std::string& path) {
+/*static std::string getMimeTypeFromPath(const std::string& path) {
 	size_t pos = path.rfind('.');
 	if (pos == std::string::npos) return "application/octet-stream";
 	std::string ext = path.substr(pos);
@@ -17,12 +17,21 @@ static std::string getMimeTypeFromPath(const std::string& path) {
 	if (ext == ".txt") return "text/plain";
 	if (ext == ".xml") return "application/xml";
 	return "application/octet-stream";
-} //MARIO
+} //MARIO*/
 
-// Generate the final path of the file.
+// Generate the final path of the file. In case the raw only have a '/', need to find the first server default path in the 'index'.
 std::string	Handler::buildFilePath(const std::string& rawReq) const {
-	if (rawReq == "/")
-		return _root + "/index.html";
+	if (rawReq == "/") {
+		std::vector<std::string> indexV = _conf.getIndex();
+
+		for (int i = 0; i < indexV.size(); ++i) {
+			std::string index = _root + '/' + indexV[i];
+			std::ifstream file(candidate.c_str());
+			if (file.good())
+				return index;
+		}
+		return "";
+	}
 	return _root + rawReq;
 }
 
@@ -60,6 +69,7 @@ bool	saveMultipartFile(std::string part) {
 		if (content.size() >= 2 && content[content.size() - 2] == '\r')
 			content.erase(content.size() - 2); //Remove last "\r\n"
 		
+			//---->>cambiar uploads por el getuploadstore + '/', si esta vacio si que pongo uploads/.
 		std::ofstream out(("uploads/" + fileName).c_str(), std::ios::binary); //Open/create a file with that name in uploads directory.
 		out.write(content.c_str(), content.size()); //Use write instead of <<, because binaries can have a "\0" inside the text.
 		out.close();
@@ -82,14 +92,11 @@ Response Handler::handleMULT(const Request& req) {
 			if (!saveMultipartFile(mBody[i]))
 				throw std::runtime_error("Bad multipart");
 		}
-		res.setStatus(200, "OK");
-		res.setHeader("Content-Type", req.getType());
-		res.setBody("<h1>File uploaded succesfully</h1>");
+		FillResp::set200(res, req, "<h1>File uploaded succesfully</h1>");
 	}
 	catch (const std::exception& e) {
-		res.setStatus(500, "Internal Server Error");
-		res.setHeader("Content-Type", req.getType());
-		res.setBody("<h1>500 Internal Server Error</h1>");
+		FillResp::set500(res, req);
+		return res;
 	}
 	return res;
 }
@@ -100,6 +107,10 @@ Response	Handler::handlePOST(const Request& req) {
 	Response	res;
 	try {
 		std::string path = buildFilePath(req.getPath()); //Gen path.
+		if (path.empty()) {
+			FillResp::set404(res, req);
+			return res;
+		}
 
 		std::ofstream file(path.c_str(), std::ios::out | std::ios::binary); //Open file in write mode.
 		if (!file.is_open())
@@ -107,14 +118,11 @@ Response	Handler::handlePOST(const Request& req) {
 		file << req.getBody();
 		file.close();
 
-		res.setStatus(201, "Created");
-		res.setHeader("Content-Type", req.getType());
-		res.setBody("<h1>201 Created</h1>");
+		FillResp::set201(res, req);
 	}
 	catch (const std::exception& e) {
-		res.setStatus(500, "Internal Server Error");
-		res.setHeader("Content-Type", req.getType());
-		res.setBody("<h1>500 Internal Server Error</h1>");
+		FillResp::set500(res, req);
+		return res;
 	}
 	return res;
 }
@@ -126,28 +134,26 @@ Response	Handler::handleDELETE(const Request& req) {
 
 	try {
 		std::string path = buildFilePath(req.getPath()); //Gen path.
+		if (path.empty()) {
+			FillResp::set404(res, req);
+			return res;
+		}
 
 		struct stat s; //Verify path/file availability.
 		if (stat(path.c_str(), &s) != 0 || S_ISDIR(s.st_mode)) {
-			res.setStatus(404, "Not Found");
-			res.setHeader("Content-Type", req.getType());
-			res.setBody("<h1>404 Not Found</h1>");
+			FillResp::set404(res, req);
 			return res;
 		}
 
 		if (remove(path.c_str()) != 0) //Removing/deleting file
 			throw std::runtime_error("Error deleting file");
 
-		res.setStatus(200, "OK");
-		res.setHeader("Content-Type", req.getType());
-		res.setBody("<h1>200 OK - File Deleted</h1>");
+		FillResp::set200(res, req, "<h1>200 OK - File Deleted</h1>");
 	}
 	catch (const std::exception& e) {
-		res.setStatus(500, "Internal Server Error");
-		res.setHeader("Content-Type", req.getType());
-		res.setBody("<h1>500 Internal Server Error</h1>");
+		FillResp::set500(res, req);
+		return res;
 	}
-
 	return res;
 }
 
@@ -157,20 +163,20 @@ Response	Handler::handleGET(const Request& req) {
 	Response	res;
 	try {
 		std::string path = buildFilePath(req.getPath()); //Gen path.
+		if (path.empty()) {
+			FillResp::set404(res, req);
+			return res;
+		}
 
 		struct stat s; //Verify path/file availability.
 		if (stat(path.c_str(), &s) != 0 || S_ISDIR(s.st_mode)) {
-			res.setStatus(404, "Not Found");
-		res.setHeader("Content-Type", req.getType());
-			res.setBody("<h1>404 Not Found</h1>");
+			FillResp::set404(res, req);
 			return res;
 		}
 
 		std::ifstream file(path.c_str(), std::ios::in | std::ios::binary); //Open file in read mode.
 		if (!file.is_open()) {
-			res.setStatus(403, "Forbidden");
-		res.setHeader("Content-Type", req.getType());
-			res.setBody("<h1>403 Forbidden</h1>");
+			FillResp::set403(res, req);
 			return res;
 		}
 
@@ -178,14 +184,13 @@ Response	Handler::handleGET(const Request& req) {
 		buff << file.rdbuf();
 		file.close();
 
-		res.setStatus(200, "OK");
+		FillResp::set200(res, req, buff.str());
+		/*res.setStatus(200, "OK");
 		res.setHeader("Content-Type", getMimeTypeFromPath(path)); //Mario
-		res.setBody(buff.str());
+		res.setBody(buff.str());*/
 	}
 	catch (const std::exception& e) {
-		res.setStatus(500, "Internal Server Error");
-		res.setHeader("Content-Type", req.getType());
-		res.setBody("<h1>500 Internal Server Error</h1>");
+		FillResp::set500(res, req);
 	}
 	return res;
 }
@@ -196,20 +201,16 @@ Response	Handler::handleRequest(const std::string& rawReq) {
 	Response	res;
 
 	if (!req.parseRequestValidity(rawReq)) {
-		res.setStatus(400, "Bad Request");
-		res.setHeader("Content-Type", req.getType());
-		res.setBody("<h1>400 Bad Request</h1>");
+		FillResp::set400(res, req);
 		return res;
 	}
 
 	if(req.getVersion() != "HTTP/1.1") {
-		res.setStatus(505, "HTTP Version Not Supported");
-		res.setHeader("Content-Type", req.getType());
-		res.setBody("<h1>505 Version Not Supported</h1>");
+		FillResp::set505(res, req);
 		return res;
 	}
 
-	if (req.getMethod() == "GET")
+	if (req.getMethod() == "GET") //---->>En cada metodo mirar si lo permite el webserv.conf para esa location. Miro donde estoy en el path de la cabecera http (usando tambien get_locations de serverconfig.hpp que me devuelve el vector de LocationConfigStruct)
 			return handleGET(req);
 	else if (req.getMethod() == "POST") {
 		if (!(req.getBound()).empty()) //POST can have _multiBody, so if _bound is setted, use handleMULT() instead of handlePOST()
@@ -219,9 +220,7 @@ Response	Handler::handleRequest(const std::string& rawReq) {
 	else if (req.getMethod() == "DELETE")
 		return handleDELETE(req);
 	else {
-		res.setStatus(405, "Method Not Allowed");
-		res.setHeader("Content-Type", req.getType());
-		res.setBody("<h1>405 Method Not Allowed</h1>");
+		FillResp::set405(res, req);
 		return res;
 	}
 }
