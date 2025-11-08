@@ -182,6 +182,13 @@
 - ⏳ Documentar formato .conf completo con ejemplos
 - ⏳ Proporcionar archivos de configuración y archivos de prueba
 
+### Lo que falta Persona B
+- ⏳ buildFilePath() hardcoded
+- ⏳ handleGET() NO maneja directorios
+- ⏳ Upload storage hardcoded
+- ⏳ Location-based method validation
+- ⏳ Handler NO recibe ServerConfig
+
 ### Testing conjunto
 - ⏳ Script de tests automatizado (bash + curl)
 - ⏳ 20-30 casos típicos del subject
@@ -470,5 +477,3 @@ int socket_fd = accept(...);
 // CORRECTO: esperar POLLIN con poll()
 
 ```
-
-
