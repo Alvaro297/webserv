@@ -150,6 +150,20 @@ bool ConfigParser::fillServer(const std::string& block, ServerConfigStruct& serv
 
 			std::string marker = "location " + path;
 			size_t pos = block.find(marker, searchPos);
+			// Ensure we don't match prefixes: e.g. 'location /' must not match 'location /siege'
+			while (pos != std::string::npos) {
+				size_t afterPos = pos + marker.length();
+				if (afterPos < block.length()) {
+					char nextChar = block[afterPos];
+					// acceptable separators after the path: whitespace or '{'
+					if (nextChar == ' ' || nextChar == '\t' || nextChar == '\r' || nextChar == '\n' || nextChar == '{')
+						break; // valid match
+				} else {
+					// marker is at end of block (unlikely), treat as match
+					break;
+				}
+				pos = block.find(marker, pos + 1);
+			}
 			if (pos != std::string::npos) {
 				size_t bracePos = block.find('{', pos);
 				if (bracePos != std::string::npos) {
@@ -174,6 +188,11 @@ bool ConfigParser::fillServer(const std::string& block, ServerConfigStruct& serv
 						}
 						server.locations.push_back(loc);
 						searchPos = innerEnd;
+						// Advance the input stream position to skip lines inside the parsed location
+						// so they are not interpreted as top-level server directives.
+						iss.clear();
+						iss.seekg((std::streampos)innerEnd);
+						continue;
 					}
 				}
 			}

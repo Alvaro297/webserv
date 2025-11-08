@@ -92,14 +92,47 @@ void Server::processRequest(int fd, const std::string& fullBuffer)
 	ServerConfig* config = extractFullPath(fullBuffer);
 
 	if (config)
-		fullPath = extractFullPath(fullBuffer)->getRoot();
+		fullPath = config->getRoot(); //MARIO
 	else
-		fullPath = "dynamic_root";
-	if (req.parseRequestValidity(fullPath))
+		fullPath = "dynamic_root2";
+	//MARIO
+	if (req.parseRequestValidity(fullBuffer))
 	{
+		// First, check for a matching location return (longest prefix match)
+		if (config) {
+			const std::vector<LocationConfigStruct>& locs = config->getLocations();
+			const LocationConfigStruct* bestLoc = NULL;
+			size_t bestLen = 0;
+			std::string reqPath = req.getPath();
+			for (size_t i = 0; i < locs.size(); ++i) {
+				const LocationConfigStruct& loc = locs[i];
+				if (reqPath.compare(0, loc.path.length(), loc.path) == 0 && loc.path.length() > bestLen) {
+					bestLen = loc.path.length();
+					bestLoc = &loc;
+				}
+			}
+			if (bestLoc && bestLoc->return_code != 0) {
+				Response r;
+				int code = bestLoc->return_code;
+				std::string msg = (code == 301) ? "Moved Permanently" : (code == 302) ? "Found" : "Redirect";
+				r.setStatus(code, msg);
+				std::string locurl = bestLoc->return_url;
+				if (locurl.empty()) locurl = "/";
+				r.setHeader("Location", locurl);
+				r.setHeader("Content-Type", "text/html");
+				r.setBody(std::string("<html><body><h1>") + intToString(code) + " " + msg + "</h1></body></html>");
+				this->_client[fd].appendWriteBuffer(r.genResponseString());
+				return;
+			}
+		}
+
+		// If not a return redirection, check for CGI by extension
+		// MARIO
 		size_t extensionDot = req.getPath().find('.');
-		std::string extension = req.getPath().substr(extensionDot);
-		if (config->supportsExtension(extension))
+		std::string extension;
+		if (extensionDot != std::string::npos) //MARIO
+			extension = req.getPath().substr(extensionDot); // MARIO
+		if (config && !extension.empty() && config->supportsExtension(extension)) // MARIO
 		{
 			CGIHandler cgiHandler(config->getCgiExtensions(), fullPath, config->getServerName(), intToString(config->getPort()));
 			Response resp = cgiHandler.handle(req);

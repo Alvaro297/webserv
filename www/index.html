@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Web Serv Tester</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="cookie-banner" class="cookie-banner">
+        <p>Este sitio usa cookies para mejorar tu experiencia. ¿Aceptas las cookies?</p>
+        <button id="accept-cookies">Aceptar</button>
+        <button id="reject-cookies">Rechazar</button>
+    </div>
+
+    <!-- Top black bar -->
+    <header class="top-bar">
+        <h1 class="title">Web Serv Tester</h1>
+    </header>
+
+    <main class="container">
+        <h1>webserv feature tester.</h1>
+        <div class="buttons">
+            <button onclick="window.location.href='upload/upload.html'">Test POST (File Upload)</button>
+            <button onclick="window.location.href='login/login.html'">Test CGI (Log In) </button>
+            <button onclick="window.location.href='login-infinite/login-infinite.html'">Test CGI (Infinite CGI)</button>
+            <button onclick="window.location.href='delete/delete.html'">Test DELETE (Delete File)</button>
+            <button onclick="window.location.href='redirection/redirection.html'">Test Redirection</button>
+            <button onclick="window.location.href='error_pages/error_pages.html'">Test Error Pages</button>
+            <button onclick="window.location.href='test-autoindex'">Test Auto Index</button>
+            <button onclick="window.location.href='test-head/head.html'">Test HEAD</button>
+        </div>
+
+        <!-- Botones de colores -->
+        <div class="color-buttons">
+            <button class="color-green" data-color="green">Green</button>
+            <button class="color-red" data-color="red">Red</button>
+            <button class="color-blue" data-color="blue">Blue</button>
+            <button class="color-yellow" data-color="yellow">Yellow</button>
+        </div>
+    </main>
+
+   <!-- Manejar clicks en botones de color -->
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Función para leer cookie
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+
+        // Aplicar color de cookie al fondo
+        const color = getCookie("color");
+        if (color) document.body.style.backgroundColor = color;
+
+        // Banner de cookies
+        const cookiesAllowed = localStorage.getItem("cookiesAccepted") === "true";
+        if (!cookiesAllowed) {
+            document.getElementById("cookie-banner").style.display = "block";
+        }
+
+        document.getElementById("accept-cookies").onclick = function() {
+            localStorage.setItem("cookiesAccepted", "true");
+            document.getElementById("cookie-banner").style.display = "none";
+        };
+
+        document.getElementById("reject-cookies").onclick = function() {
+            alert("No podrás iniciar sesión ni mantener tu sesión activa sin cookies.");
+            document.getElementById("cookie-banner").style.display = "none";
+        };
+
+        // Manejar clicks en botones de color
+        const colorButtons = document.querySelectorAll(".color-buttons button");
+        colorButtons.forEach(btn => {
+            btn.addEventListener("click", function() {
+                const selectedColor = this.dataset.color;
+
+                // Solo crear cookie si el usuario aceptó cookies
+                const cookiesAllowedNow = localStorage.getItem("cookiesAccepted") === "true";
+                if (!cookiesAllowedNow) {
+                    alert("Debes aceptar las cookies para cambiar el color de fondo.");
+                    return;
+                }
+
+                // Crear cookie "color" que dure 7 días
+                document.cookie = `color=${selectedColor}; path=/; max-age=${7*24*60*60}`;
+                // Cambiar fondo inmediatamente
+                document.body.style.backgroundColor = selectedColor;
+
+                // Opcional: enviar color al servidor para Set-Cookie
+                fetch("/", {
+                    method: "GET",
+                    headers: {
+                        "X-Cookies-Allowed": "true",
+                        "X-Color": selectedColor
+                    }
+                });
+            });
+        });
+    });
+    </script>
+
+
+
+</html>
