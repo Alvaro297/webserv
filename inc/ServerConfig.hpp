@@ -82,7 +82,6 @@ public:
 	void setCgiEnable(const bool value);
 
 	bool supportsExtension(const std::string& ext) const;
-	//Faltan funciones para escuchar al cliente (Para cuando el server se pueda conectar xd)
 };
 
 
