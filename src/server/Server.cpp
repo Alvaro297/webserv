@@ -37,7 +37,7 @@ static std::string intToString(const int port)
 	return result;
 }
 
-std::string generateErrorPage(const int errorCode, const std::string bodyError)
+static std::string generateErrorPage(const int errorCode, const std::string bodyError)
 {
 	std::ostringstream page;
 	
