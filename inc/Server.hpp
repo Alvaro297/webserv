@@ -43,6 +43,10 @@ private:
 	void closeClient(int fd, const std::string& reason);
 	void closeServer();
 	ServerConfig* extractFullPath(std::string fullBuffer);
+	bool isCGIextension(ServerConfig *config, Request req, int fd, std::string fullPath);
+	bool searchingSignals(std::vector<struct pollfd> fds, size_t i);
+	void setupPollFds(std::vector<struct pollfd>& fds);
+	void handleClientTimeouts();
 public:
 	Server();
 	Server(std::vector<ServerConfig>& servers);

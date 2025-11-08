@@ -84,22 +84,10 @@ ServerConfig* Server::extractFullPath(std::string fullBuffer)
 	return NULL;
 }
 
-
-void Server::processRequest(int fd, const std::string& fullBuffer)
+bool Server::isCGIextension(ServerConfig *config, Request req, int fd,std::string fullPath)
 {
-	std::string fullPath;
-	Request req = Request();
-	ServerConfig* config = extractFullPath(fullBuffer);
-
 	if (config)
-		fullPath = config->getRoot(); //MARIO
-	else
-		fullPath = "dynamic_root2";
-	//MARIO
-	if (req.parseRequestValidity(fullBuffer))
 	{
-		// First, check for a matching location return (longest prefix match)
-		if (config) {
 			const std::vector<LocationConfigStruct>& locs = config->getLocations();
 			const LocationConfigStruct* bestLoc = NULL;
 			size_t bestLen = 0;
@@ -122,12 +110,9 @@ void Server::processRequest(int fd, const std::string& fullBuffer)
 				r.setHeader("Content-Type", "text/html");
 				r.setBody(std::string("<html><body><h1>") + intToString(code) + " " + msg + "</h1></body></html>");
 				this->_client[fd].appendWriteBuffer(r.genResponseString());
-				return;
+				return true;
 			}
 		}
-
-		// If not a return redirection, check for CGI by extension
-		// MARIO
 		size_t extensionDot = req.getPath().find('.');
 		std::string extension;
 		if (extensionDot != std::string::npos) //MARIO
@@ -137,8 +122,25 @@ void Server::processRequest(int fd, const std::string& fullBuffer)
 			CGIHandler cgiHandler(config->getCgiExtensions(), fullPath, config->getServerName(), intToString(config->getPort()));
 			Response resp = cgiHandler.handle(req);
 			this->_client[fd].appendWriteBuffer(resp.genResponseString());
-			return;
+			return true;
 		}
+	return false;
+}
+
+void Server::processRequest(int fd, const std::string& fullBuffer)
+{
+	std::string fullPath;
+	Request req = Request();
+	ServerConfig* config = extractFullPath(fullBuffer);
+
+	if (config)
+		fullPath = config->getRoot();
+	else
+		fullPath = "dynamic_root2";
+	if (req.parseRequestValidity(fullBuffer))
+	{
+		if (isCGIextension(config, req, fd, fullPath))
+			return ;
 	}
 	Handler hand(fullPath);
 	Response resp = hand.handleRequest(fullBuffer);
@@ -160,7 +162,7 @@ void Server::createListener(const ServerConfig& config, const std::string& fullh
 		return;
 	}
 	
-	// Permitir reutilizar el puerto inmediatamente después de cerrar el servidor
+	// Can use the port and no blocking with poll
 	int opt = 1;
 	if (setsockopt(fdSocket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
 	{
@@ -209,14 +211,16 @@ void Server::initSockets()
 
 static std::string whatMethod(std::string line)
 {
+	//Look methods if not GET
 	std::string typeMethod;
 	size_t firstSpace = line.find(" ");
 
 	typeMethod = line.substr(0, firstSpace);
-	if (typeMethod != "POST" || typeMethod != "GET"
-		|| typeMethod != "DELETE" || typeMethod != "FETCH")
-		return "GET";
-	return typeMethod;
+	if (typeMethod == "POST" || typeMethod == "GET"
+		|| typeMethod == "DELETE" || typeMethod == "HEAD"
+		|| typeMethod == "PUT" || typeMethod == "OPTIONS")
+		return typeMethod;
+	return "GET";
 }
 
 static bool lineFinish(std::string line)
@@ -344,12 +348,13 @@ void Server::acceptSocket(int fds)
 		close(client_fd);
 		return;
 	}
-	// Insertar directamente en el map sin crear objeto por defecto
+	// Insert a new Client
 	this->_client.insert(std::make_pair(client_fd, Client(client_fd)));
 }
 
 static bool isListener(std::map<std::string, Listeners> _listeners, int fdListener)
 {
+	//If exist or not the listener
 	for (std::map<std::string, Listeners>::iterator it = _listeners.begin();
 			 it != _listeners.end(); ++it)
 	{
@@ -361,12 +366,14 @@ static bool isListener(std::map<std::string, Listeners> _listeners, int fdListen
 
 static void signalHandler(int signum)
 {
+	//Signal to go out Ctrl+C
 	(void)signum;
 	g_shutdown = 1;
 }
 
 void Server::closeServer()
 {
+	//Closing the server for no leaks or fds open
 	for (std::map<std::string,Listeners>::iterator it = _listeners.begin(); it != _listeners.end();)
 	{
 		if (it->second.fd)
@@ -381,57 +388,98 @@ void Server::closeServer()
 	}
 }
 
+bool Server::searchingSignals(std::vector<struct pollfd> fds, size_t i)
+{
+	//See if the client do it something this can be possible with the signals
+	if (fds[i].revents & POLLERR)
+	{
+		closeClient(fds[i].fd, "Socket error");
+		return true;
+	}
+	if (fds[i].revents & POLLNVAL)
+	{
+		std::cerr << "[ERROR] Invalid fd=" << fds[i].fd << std::endl;
+		_client.erase(fds[i].fd);
+		return true;
+	}
+	if (fds[i].revents & POLLIN)
+	{
+		if (isListener(this->_listeners, fds[i].fd))
+			acceptSocket(fds[i].fd);
+		else
+			readClient(fds[i].fd);
+	}
+	if (fds[i].revents & POLLOUT)
+	{
+		bool success = this->_client[fds[i].fd].writeClient();
+		if (!success)
+			closeClient(fds[i].fd, "Error writing to client");
+	}
+	if (fds[i].revents & POLLHUP)
+		closeClient(fds[i].fd, "Client hung up");
+	return false;
+}
+
+void Server::setupPollFds(std::vector<struct pollfd>& fds)
+{
+	struct pollfd tmp;
+	fds.clear();
+	// Add listener sockets
+	for (std::map<std::string, Listeners>::iterator it = _listeners.begin();
+		 it != _listeners.end(); ++it)
+	{
+		tmp.fd = it->second.fd;
+		tmp.events = POLLIN;
+		tmp.revents = 0;
+		fds.push_back(tmp);
+	}
+	// Add client sockets
+	for (std::map<int,Client>::iterator it = _client.begin(); it != _client.end(); ++it)
+	{
+		struct pollfd pfd;
+		pfd.fd = it->first;
+		pfd.events = POLLIN;
+		if (!it->second.getWriteBuffer().empty())
+			pfd.events |= POLLOUT;
+		pfd.revents = 0;
+		fds.push_back(pfd);
+	}
+}
+
+void Server::handleClientTimeouts()
+{
+	time_t now = time(NULL);
+	for (std::map<int,Client>::iterator it = _client.begin(); it != _client.end();)
+	{
+		// Timeout configuration
+		if ((now - it->second.getLastActivity()) > 1200)
+		{
+			std::string response408 = generateErrorPage(408, "Request Timeout");
+			this->_client[it->first].appendWriteBuffer(response408);
+			close(it->first);
+			this->_client.erase(it++);
+		}
+		else
+			++it;
+	}
+}
+
 void Server::run()
 {
 	int ready;
-	struct pollfd tmp;
-
+	std::vector<struct pollfd> fds;
+	
 	signal(SIGINT, signalHandler);
 	signal(SIGPIPE, SIG_IGN);
-	//Falta controlar error 503 (Muchos clientes)
-	//Loop principal
 	while (!g_shutdown)
 	{
-		std::vector<struct pollfd> fds;
-		fds.clear();
-		for (std::map<std::string, Listeners>::iterator it = _listeners.begin();
-			 it != _listeners.end(); ++it)
-		{
-			tmp.fd = it->second.fd;
-			tmp.events = POLLIN;
-			tmp.revents = 0;
-			fds.push_back(tmp);
-		}
-		for (std::map<int,Client>::iterator it = _client.begin(); it != _client.end(); ++it)
-		{
-			struct pollfd pfd;
-			pfd.fd = it->first;
-			pfd.events = POLLIN;
-			if (!it->second.getWriteBuffer().empty())
-				pfd.events |= POLLOUT;
-			pfd.revents = 0;
-			fds.push_back(pfd);
-		}
+		setupPollFds(fds);
 		if (fds.empty())
 		{
 			std::cerr << "No file descriptors to poll." << std::endl;
 			break;
 		}
-		for (std::map<int,Client>::iterator it = _client.begin(); it != _client.end();)
-		{
-			time_t now = time(NULL);
-			// Esto es el timeout modificarlo a vuestra medida para si quereis seguir o no (Actualmente en 12 sec)
-			if ((now - it->second.getLastActivity()) > 1200)
-			{
-				std::string response408 = generateErrorPage(408, "Request Timeout");
-				this->_client[it->first].appendWriteBuffer(response408);
-				close(it->first);
-				this->_client.erase(it++);
-			}
-			else
-				++it;
-		}
-		//Este bucle se actualiza cada 1 sec gracias al poll por lo que el timeout como mucho sale con un sec de retraso
+		handleClientTimeouts();
 		ready = poll(&fds[0], fds.size(), 1000);
 		if (ready < 0)
 		{
@@ -442,32 +490,8 @@ void Server::run()
 		}
 		for (size_t i = 0; i < fds.size(); i++)
 		{
-			if (fds[i].revents & POLLERR)
-			{
-				closeClient(fds[i].fd, "Socket error");
+			if (searchingSignals(fds, i))
 				continue;
-			}
-			if (fds[i].revents & POLLNVAL)
-			{
-				std::cerr << "[ERROR] Invalid fd=" << fds[i].fd << std::endl;
-				_client.erase(fds[i].fd);
-				continue;
-			}
-			if (fds[i].revents & POLLIN)
-			{
-				if (isListener(this->_listeners, fds[i].fd))
-					acceptSocket(fds[i].fd);
-				else
-					readClient(fds[i].fd);
-			}
-			if (fds[i].revents & POLLOUT)
-			{
-				bool success = this->_client[fds[i].fd].writeClient();
-				if (!success)
-					closeClient(fds[i].fd, "Error writing to client");
-			}
-			if (fds[i].revents & POLLHUP)
-				closeClient(fds[i].fd, "Client hung up");
 		}
 	}
 	closeServer();
