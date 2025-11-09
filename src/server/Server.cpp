@@ -94,7 +94,10 @@ void Server::processRequest(int fd, const std::string& fullBuffer)
 	if (config)
 		fullPath = config->getRoot(); //MARIO
 	else
-		fullPath = "dynamic_root2";
+	{
+		this->_client[fd].appendWriteBuffer(generateErrorPage(400, "Config not found"));
+		return ;
+	}
 	//MARIO
 	if (req.parseRequestValidity(fullBuffer))
 	{
