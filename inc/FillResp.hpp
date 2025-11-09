@@ -8,9 +8,9 @@
 class FillResp
 {
 	public:
-		static void	set200(Response &res, const Request &req, const std::string &answer) {
+		static void	set200(Response &res, const std::string &setterHeader, const std::string &answer) {
 		res.setStatus(200, "OK");
-		res.setHeader("Content-Type", req.getType());
+		res.setHeader("Content-Type", setterHeader);
 		res.setBody(answer);
 		}
 

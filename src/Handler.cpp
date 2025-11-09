@@ -1,8 +1,33 @@
 #include "../inc/Handler.hpp"
+#include "../inc/autoindex.hpp"
 
 Handler::Handler(const std::string& root, const ServerConfig& conf) : _root(root), _conf(conf) {}
 
-/*static std::string getMimeTypeFromPath(const std::string& path) {
+//Find if the location have autoindex on
+bool Handler::isAutoindexEnabled(const std::string& requestPath)
+{
+	std::vector<LocationConfigStruct> allLocations = this->_conf.getLocations();
+	std::string pathLocation;
+	size_t		locationPathLength = 0;
+	size_t		locationPathMaxLength = 0;
+	bool		isAutoindex = this->_conf.getAutoindex();
+	for (size_t i = 0; i < allLocations.size(); i++)
+	{
+		pathLocation = allLocations[i].path;
+		if (requestPath.find(pathLocation) == 0)
+		{
+			locationPathLength = pathLocation.size();
+			if (locationPathLength > locationPathMaxLength)
+			{
+				locationPathMaxLength = locationPathLength;
+				isAutoindex = allLocations[i].autoindex;
+			}
+		}
+	}
+	return isAutoindex;
+}
+
+static std::string getMimeTypeFromPath(const std::string& path) {
 	size_t pos = path.rfind('.');
 	if (pos == std::string::npos) return "application/octet-stream";
 	std::string ext = path.substr(pos);
@@ -17,7 +42,7 @@ Handler::Handler(const std::string& root, const ServerConfig& conf) : _root(root
 	if (ext == ".txt") return "text/plain";
 	if (ext == ".xml") return "application/xml";
 	return "application/octet-stream";
-} //MARIO*/
+} //MARIO
 
 // Generate the final path of the file. In case the raw only have a '/', need to find the first server default path in the 'index'.
 std::string	Handler::buildFilePath(const std::string& rawReq) const {
@@ -25,7 +50,10 @@ std::string	Handler::buildFilePath(const std::string& rawReq) const {
 		std::vector<std::string> indexV = _conf.getIndex();
 
 		for (size_t i = 0; i < indexV.size(); ++i) {
-			std::string ind = _root + '/' + indexV[i];
+			std::string ind = _root;
+			if (ind[ind.length()-1] != '/')
+				ind += "/";
+			ind += indexV[i];
 			std::ifstream file(ind.c_str());
 			if (file.good())
 				return ind;
@@ -36,7 +64,7 @@ std::string	Handler::buildFilePath(const std::string& rawReq) const {
 }
 
 //Save the content of _multiBody in different files.
-bool	saveMultipartFile(std::string part) {
+bool	saveMultipartFile(std::string part, ServerConfig _conf) {
 	try {
 		size_t	dispStart = part.find("Content-Disposition:");
 
@@ -69,8 +97,12 @@ bool	saveMultipartFile(std::string part) {
 		if (content.size() >= 2 && content[content.size() - 2] == '\r')
 			content.erase(content.size() - 2); //Remove last "\r\n"
 		
-			//---->>cambiar uploads por el getuploadstore + '/', si esta vacio si que pongo uploads/.
-		std::ofstream out(("uploads/" + fileName).c_str(), std::ios::binary); //Open/create a file with that name in uploads directory.
+		//---->>cambiar uploads por el getuploadstore + '/', si esta vacio si que pongo uploads/.
+		std::ofstream out;
+		if (_conf.getUploadStore().empty())
+			out.open(("uploads/" + fileName).c_str(), std::ios::binary); //Open/create a file with that name in uploads directory.
+		else
+			out.open((_conf.getUploadStore() + "/" + fileName).c_str(), std::ios::binary); //Open/create a file with that name in uploads directory.
 		out.write(content.c_str(), content.size()); //Use write instead of <<, because binaries can have a "\0" inside the text.
 		out.close();
 	}
@@ -89,10 +121,10 @@ Response Handler::handleMULT(const Request& req) {
 		std::vector<std::string> mBody = req.getMultiBody();
 
 		for (size_t i = 0; i < mBody.size(); ++i) {
-			if (!saveMultipartFile(mBody[i]))
+			if (!saveMultipartFile(mBody[i], this->_conf))
 				throw std::runtime_error("Bad multipart");
 		}
-		FillResp::set200(res, req, "<h1>File uploaded succesfully</h1>");
+		FillResp::set200(res, getMimeTypeFromPath("success.html"), "<h1>File uploaded succesfully</h1>");
 	}
 	catch (const std::exception& e) {
 		FillResp::set500(res, req);
@@ -148,7 +180,7 @@ Response	Handler::handleDELETE(const Request& req) {
 		if (remove(path.c_str()) != 0) //Removing/deleting file
 			throw std::runtime_error("Error deleting file");
 
-		FillResp::set200(res, req, "<h1>200 OK - File Deleted</h1>");
+		FillResp::set200(res, getMimeTypeFromPath("success.html"), "<h1>200 OK - File Deleted</h1>");
 	}
 	catch (const std::exception& e) {
 		FillResp::set500(res, req);
@@ -159,35 +191,47 @@ Response	Handler::handleDELETE(const Request& req) {
 
 // GET Method. Check availability of the file: generating its path, ensuring that path exists, is a directory, and is openable.
 //  Then, using file content as _body, returns the generated response.
-Response	Handler::handleGET(const Request& req) {
-	Response	res;
+Response	Handler::handleGET(const Request& req)
+{
+	Response res;
 	try {
-		std::string path = buildFilePath(req.getPath()); //Gen path.
-		if (path.empty()) {
+		struct stat s;
+		std::string path = buildFilePath(req.getPath());
+		std::cout << "[DEBUG] buildFilePath('" << req.getPath() << "') = '" << path << "'" << std::endl;
+		if (path.empty())
+			path = _root + req.getPath();
+		std::cout << "[DEBUG] Final path: '" << path << "'" << std::endl;
+		if (stat(path.c_str(), &s) != 0)
+		{
 			FillResp::set404(res, req);
 			return res;
 		}
-
-		struct stat s; //Verify path/file availability.
-		if (stat(path.c_str(), &s) != 0 || S_ISDIR(s.st_mode)) {
-			FillResp::set404(res, req);
-			return res;
+		if (S_ISDIR(s.st_mode)) {
+			// Check if autoindex is enabled for this location
+			if (isAutoindexEnabled(req.getPath())) {
+				std::string autoindexHtml = generateAutoindexHtml(path, req.getPath());
+				res.setStatus(200, "OK");
+				res.setHeader("Content-Type", "text/html");
+				res.setBody(autoindexHtml);
+				return res;
+			} else {
+				FillResp::set403(res, req);
+				return res;
+			}
 		}
-
-		std::ifstream file(path.c_str(), std::ios::in | std::ios::binary); //Open file in read mode.
+		// Handle regular files
+		std::ifstream file(path.c_str(), std::ios::in | std::ios::binary);
 		if (!file.is_open()) {
 			FillResp::set403(res, req);
 			return res;
 		}
-
-		std::ostringstream buff; //Read file (sending content to buff).
+		std::ostringstream buff;
 		buff << file.rdbuf();
 		file.close();
-
-		FillResp::set200(res, req, buff.str());
-		/*res.setStatus(200, "OK");
-		res.setHeader("Content-Type", getMimeTypeFromPath(path)); //Mario
-		res.setBody(buff.str());*/
+		FillResp::set200(res, getMimeTypeFromPath(path), buff.str());
+		//res.setStatus(200, "OK");
+		//res.setHeader("Content-Type", getMimeType(path));
+		//res.setBody(buff.str());
 	}
 	catch (const std::exception& e) {
 		FillResp::set500(res, req);
@@ -199,17 +243,24 @@ Response	Handler::handleGET(const Request& req) {
 Response	Handler::handleRequest(const std::string& rawReq) {
 	Request		req;
 	Response	res;
+	
+	std::cout << "[DEBUG] handleRequest called with rawReq: '" << rawReq.substr(0, 100) << "...'" << std::endl;
 
 	if (!req.parseRequestValidity(rawReq)) {
+		std::cout << "[DEBUG] parseRequestValidity FAILED!" << std::endl;
 		FillResp::set400(res, req);
 		return res;
 	}
+	
+	std::cout << "[DEBUG] parseRequestValidity OK - Method: " << req.getMethod() << ", Path: " << req.getPath() << ", Version: " << req.getVersion() << std::endl;
 
 	if(req.getVersion() != "HTTP/1.1") {
+		std::cout << "[DEBUG] Version check FAILED! Got: " << req.getVersion() << std::endl;
 		FillResp::set505(res, req);
 		return res;
 	}
 
+	std::cout << "[DEBUG] All checks passed, calling method handler..." << std::endl;
 	if (req.getMethod() == "GET") //---->>En cada metodo mirar si lo permite el webserv.conf para esa location. Miro donde estoy en el path de la cabecera http (usando tambien get_locations de serverconfig.hpp que me devuelve el vector de LocationConfigStruct)
 			return handleGET(req);
 	else if (req.getMethod() == "POST") {

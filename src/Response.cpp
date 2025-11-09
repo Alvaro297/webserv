@@ -1,6 +1,6 @@
 #include "../inc/Response.hpp"
 
-Response::Response() {}
+Response::Response() : _statusCode(0), _error(0) {}
 
 void	Response::setStatus(int code, const std::string& msg) {
 	_statusCode = code;
