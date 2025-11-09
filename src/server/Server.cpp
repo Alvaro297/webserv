@@ -140,7 +140,7 @@ void Server::processRequest(int fd, const std::string& fullBuffer)
 			return;
 		}
 	}
-	Handler hand(fullPath);
+	Handler hand(fullPath, *config);
 	Response resp = hand.handleRequest(fullBuffer);
 	if (resp.getError() != 0)
 		this->_client[fd].appendWriteBuffer(generateErrorPage(resp.getError(), resp.getBody()));

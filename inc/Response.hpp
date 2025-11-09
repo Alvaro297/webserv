@@ -24,8 +24,8 @@ class Response
 		void		setHeader(const std::string& key, const std::string& value);
 		void		setBody(const std::string& body);
 
-		const std::string	getBody();
-		const int			getError();
+		const std::string&	getBody() const;
+		int					getError() const;
 
 } ;
 

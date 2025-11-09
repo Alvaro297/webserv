@@ -23,7 +23,7 @@ class Handler {
 		std::string	getMimeType(const std::string& path) const; //Añadido por Mario
 
 	public:
-		Handler(const std::string& root);
+		Handler(const std::string& root, const ServerConfig& conf);
 		
 		Response	handleRequest(const std::string& rawReq);
 

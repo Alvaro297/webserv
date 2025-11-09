@@ -24,11 +24,11 @@ std::string	Handler::buildFilePath(const std::string& rawReq) const {
 	if (rawReq == "/") {
 		std::vector<std::string> indexV = _conf.getIndex();
 
-		for (int i = 0; i < indexV.size(); ++i) {
-			std::string index = _root + '/' + indexV[i];
-			std::ifstream file(candidate.c_str());
+		for (size_t i = 0; i < indexV.size(); ++i) {
+			std::string ind = _root + '/' + indexV[i];
+			std::ifstream file(ind.c_str());
 			if (file.good())
-				return index;
+				return ind;
 		}
 		return "";
 	}

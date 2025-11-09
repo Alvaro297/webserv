@@ -32,3 +32,11 @@ std::string	Response::genResponseString() {
 
 	return resp.str();
 }
+
+const std::string&	Response::getBody() const {
+	return _body;
+}
+
+int	Response::getError() const {
+	return _error;
+}
