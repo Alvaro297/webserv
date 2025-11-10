@@ -98,6 +98,9 @@ bool ConfigParser::fillLocation(const std::string& block, LocationConfigStruct& 
 			std::string ext, bin; ls >> ext >> bin; if (!ext.empty()) location.cgi_extensions[ext] = bin;
 		} else if (key == "cgi_enable") {
 			std::string val; ls >> val; location.cgi_enable = (val == "on" || val == "true");
+		} else if (key == "client_max_body_size") {
+			// Read numeric bytes value for this location. 0 means inherit from server.
+			ls >> location.client_max_body_size;
 		} else if (key == "return") {
 			int code = 0; std::string url; ls >> code >> url; location.return_code = code; location.return_url = url;
 		}

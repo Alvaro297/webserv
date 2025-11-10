@@ -291,16 +291,20 @@ size_t getMaxBodySizeLocation(ServerConfig *config, std::string currentBuffer)
 	size_t firstSpace = currentBuffer.find(" ");
 	size_t secondSpace = currentBuffer.find(" ", firstSpace + 1);
 	std::string path = currentBuffer.substr(firstSpace + 1, secondSpace - firstSpace - 1);
+	// Start with server default
 	size_t bodySize = config->getClientMaxBodySize();
 	std::string pathLocation;
 	size_t longPath = 0;
 
-	for (size_t i = 0; i < config->getLocations().size(); i++)
+	const std::vector<LocationConfigStruct>& locs = config->getLocations();
+	for (size_t i = 0; i < locs.size(); i++)
 	{
-		pathLocation = config->getLocations()[i].path;
+		pathLocation = locs[i].path;
 		if (path.substr(0, pathLocation.length()) == pathLocation && longPath < pathLocation.length())
 		{
-			//bodySize = config->getLocations()[i].bodySize;
+			// If location defines its own client_max_body_size (>0) use it, otherwise inherit server value
+			if (locs[i].client_max_body_size > 0)
+				bodySize = locs[i].client_max_body_size;
 			longPath = pathLocation.length();
 		}
 	}

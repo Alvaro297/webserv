@@ -20,8 +20,10 @@ struct LocationConfigStruct {
 	bool cgi_enable;
 	std::map<std::string, std::string> cgi_extensions; // ext -> binary
 	int return_code;
+	// Optional per-location max body size. If 0 -> inherit server's client_max_body_size
+	size_t client_max_body_size;
 	std::string return_url;
-	LocationConfigStruct(): autoindex(false), upload_enable(false), cgi_enable(false), return_code(0) {}
+	LocationConfigStruct(): autoindex(false), upload_enable(false), cgi_enable(false), return_code(0), client_max_body_size(0) {}
 };
 
 struct ServerConfigStruct {

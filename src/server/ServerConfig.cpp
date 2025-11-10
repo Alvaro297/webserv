@@ -32,7 +32,11 @@ ServerConfig::ServerConfig(const ServerConfigStruct server, int id)
 	this->index = server.index;
 	this->locations = server.locations;
 	this->error_pages = server.error_pages;
-	this->client_max_body_size = server.client_max_body_size;
+	// If parser didn't specify a client_max_body_size (0) use default 1MB
+	if (server.client_max_body_size > 0)
+		this->client_max_body_size = server.client_max_body_size;
+	else
+		this->client_max_body_size = 1048576;
 	this->autoindex = server.autoindex;
 	this->upload_enable = server.upload_enable;
 	this->upload_store = server.upload_store;
@@ -166,6 +170,7 @@ void ServerConfig::printConfig() const
 		}
 		std::cout << std::endl;
 		std::cout << "      Root: " << loc.root << std::endl;
+		 std::cout << "      Client max body size: " << loc.client_max_body_size << std::endl;
 		std::cout << "      Autoindex: " << (loc.autoindex ? "on" : "off") << std::endl;
 		std::cout << "      Index files: ";
 		for (size_t x = 0; x < loc.index.size(); ++x) {
