@@ -238,7 +238,7 @@ bool ConfigParser::searchServers(const std::string& text,
 		if (pos > 0 && text[pos - 1] != '\n'){
 			pos += 6;
 			continue;
-		} 
+		}
 
 		// Search for opening brace '{'
 		size_t bracePos = pos + 6;

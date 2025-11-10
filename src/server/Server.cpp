@@ -104,7 +104,7 @@ void Server::processRequest(int fd, const std::string& fullBuffer)
 	std::cout << "[DEBUG] extractFullPath returned: " << (config ? "valid config" : "NULL") << std::endl;
 
 	if (config)
-		fullPath = config->getRoot(); //MARIO
+		fullPath = config->getRoot();
 	else
 	{
 		this->_client[fd].appendWriteBuffer(generateErrorPage(400, "Config not found"));
@@ -233,8 +233,8 @@ static std::string whatMethod(std::string line)
 	size_t firstSpace = line.find(" ");
 
 	typeMethod = line.substr(0, firstSpace);
-	if (typeMethod != "POST" || typeMethod != "GET"
-		|| typeMethod != "DELETE" || typeMethod != "FETCH")
+	if (typeMethod != "POST" && typeMethod != "GET"
+		&& typeMethod != "DELETE" && typeMethod != "FETCH" && typeMethod != "HEAD")
 		return "GET";
 	return typeMethod;
 }
@@ -286,7 +286,6 @@ size_t getMaxBodySizeLocation(ServerConfig *config, std::string currentBuffer)
 		pathLocation = config->getLocations()[i].path;
 		if (path.substr(0, pathLocation.length()) == pathLocation && longPath < pathLocation.length())
 		{
-			// If the location defines a client_max_body_size (>0), use it; otherwise keep server value
 			size_t locMax = config->getLocations()[i].client_max_body_size;
 			if (locMax > 0)
 				bodySize = locMax;
