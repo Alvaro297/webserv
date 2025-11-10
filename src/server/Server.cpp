@@ -286,7 +286,10 @@ size_t getMaxBodySizeLocation(ServerConfig *config, std::string currentBuffer)
 		pathLocation = config->getLocations()[i].path;
 		if (path.substr(0, pathLocation.length()) == pathLocation && longPath < pathLocation.length())
 		{
-			//bodySize = config->getLocations()[i].bodySize;
+			// If the location defines a client_max_body_size (>0), use it; otherwise keep server value
+			size_t locMax = config->getLocations()[i].client_max_body_size;
+			if (locMax > 0)
+				bodySize = locMax;
 			longPath = pathLocation.length();
 		}
 	}

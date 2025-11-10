@@ -167,6 +167,7 @@ void ServerConfig::printConfig() const
 		std::cout << std::endl;
 		std::cout << "      Root: " << loc.root << std::endl;
 		std::cout << "      Autoindex: " << (loc.autoindex ? "on" : "off") << std::endl;
+		std::cout << "      Client max body size: " << loc.client_max_body_size << std::endl;
 		std::cout << "      Index files: ";
 		for (size_t x = 0; x < loc.index.size(); ++x) {
 			std::cout << loc.index[x];

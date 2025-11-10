@@ -27,6 +27,29 @@ static std::string trim_str(const std::string& s) {
 	return s.substr(a, b - a + 1);
 }
 
+// Helper: parse size strings like "10M", "1K", "2G" or plain numbers (bytes)
+static size_t parse_size(const std::string& s) {
+	if (s.empty()) return 0;
+	// copy and trim
+	std::string t = s;
+	// remove trailing semicolon if present
+	if (!t.empty() && t[t.size() - 1] == ';') t.erase(t.size() - 1);
+	// detect suffix
+	char suffix = t[t.size() - 1];
+	size_t multiplier = 1;
+	if (suffix == 'K' || suffix == 'k') { multiplier = 1024ULL; t.erase(t.size() - 1); }
+	else if (suffix == 'M' || suffix == 'm') { multiplier = 1024ULL * 1024ULL; t.erase(t.size() - 1); }
+	else if (suffix == 'G' || suffix == 'g') { multiplier = 1024ULL * 1024ULL * 1024ULL; t.erase(t.size() - 1); }
+
+	// Now parse numeric part
+	if (t.empty()) return 0;
+	// use strtoull for safety
+	char *endptr = NULL;
+	unsigned long long val = strtoull(t.c_str(), &endptr, 10);
+	if (endptr == t.c_str()) return 0; // not a number
+	return (size_t)(val * multiplier);
+}
+
 // Helper: recursive mkdir -p style (silently ignore EEXIST)
 static bool make_dirs(const std::string& path) {
 	if (path.empty()) return true;
@@ -74,6 +97,8 @@ bool ConfigParser::fillLocation(const std::string& block, LocationConfigStruct& 
 			location.methods.clear();
 			std::string m;
 			while (ls >> m) location.methods.push_back(m);
+		} else if (key == "client_max_body_size") {
+			std::string val; ls >> val; location.client_max_body_size = parse_size(val);
 		} else if (key == "root") {
 			ls >> location.root;
 		} else if (key == "autoindex") {
@@ -129,7 +154,9 @@ bool ConfigParser::fillServer(const std::string& block, ServerConfigStruct& serv
 		else if (key == "server_name") lineStream >> server.server_name;
 		else if (key == "host") lineStream >> server.host;
 		else if (key == "port") lineStream >> server.port;
-		else if (key == "client_max_body_size") lineStream >> server.client_max_body_size;
+		else if (key == "client_max_body_size") {
+			std::string val; lineStream >> val; server.client_max_body_size = parse_size(val);
+		}
 		else if (key == "index") {
 			server.index.clear();
 			std::string file;

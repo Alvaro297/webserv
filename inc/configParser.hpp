@@ -14,6 +14,8 @@ struct LocationConfigStruct {
 	std::vector<std::string> methods;      // allowed methods
 	std::string root;                      // root for this location
 	bool autoindex;
+	// Per-location maximum body size in bytes. 0 means not defined (inherit from server)
+	size_t client_max_body_size;
 	std::vector<std::string> index;
 	bool upload_enable;
 	std::string upload_store;
@@ -21,7 +23,7 @@ struct LocationConfigStruct {
 	std::map<std::string, std::string> cgi_extensions; // ext -> binary
 	int return_code;
 	std::string return_url;
-	LocationConfigStruct(): autoindex(false), upload_enable(false), cgi_enable(false), return_code(0) {}
+	LocationConfigStruct(): autoindex(false), client_max_body_size(0), upload_enable(false), cgi_enable(false), return_code(0) {}
 };
 
 struct ServerConfigStruct {
