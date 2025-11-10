@@ -54,7 +54,7 @@ bool	Request::parseRequestValidity(const std::string& rawReq) {
 
 
 	//PATH PARSERS//---------------->
-// Parse the path in case there are query strings on it (separating actual _path and _queryMap).
+// Parse the entry path in case there are query strings on it (separating actual _path and _queryMap).
 bool	Request::parsePath() {
 	size_t	queryPos = _path.find("?");
 
@@ -63,26 +63,30 @@ bool	Request::parsePath() {
 			return false;
 		_path.erase(queryPos);
 	}
-	setFileType();
-
 	return true;
 }
 
-// Determine the type of file and save it for later use.
+//Set the definitive path (after Handler's buildFilePath())
+void	Request::setFinalPath(const std::string& path) {
+	_finalPath = path;
+	setFileType();
+}
+
+// Determine the type of file.
 void	Request::setFileType() {
-	size_t pos = _path.rfind('.');
+	size_t pos = _finalPath.rfind('.');
 
 	if (pos == std::string::npos) {
 		_fileType = "application/octet-stream";
 		return ;
 	}
 
-	std::string ext = _path.substr(pos);
+	std::string ext = _finalPath.substr(pos);
 
 	_fileType = getMimeType(ext);
 }
 
-// Functionality to store all types info, and returns actual response type
+// Functionality to store all types info, and returns actual response type.
 std::string Request::getMimeType(const std::string& ext) {
 	static const std::pair<std::string, std::string> pairs[] = {
 		std::make_pair(".html", "text/html"),
@@ -100,11 +104,8 @@ std::string Request::getMimeType(const std::string& ext) {
 	};
 	
 	static const std::map<std::string, std::string>	typeMap(pairs, pairs + sizeof(pairs) / sizeof(pairs[0])); //Using Iterator constructor with first and last pointers as inputs
-	size_t pos = ext.rfind('.');
-	if (pos == std::string::npos)
-		return "application/octet-stream";
-	std::string pathExt = ext.substr(pos);
-	std::map<std::string, std::string>::const_iterator it = typeMap.find(pathExt);
+
+	std::map<std::string, std::string>::const_iterator it = typeMap.find(ext);
 	if (it != typeMap.end())
 		return it->second;
 
@@ -204,6 +205,10 @@ const std::string&	Request::getMethod() const {
 
 const std::string&	Request::getPath() const {
 	return _path;
+}
+
+const std::string&	Request::getFinalPath() const {
+	return _finalPath;
 }
 
 const std::string&	Request::getVersion() const {

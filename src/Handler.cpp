@@ -34,9 +34,10 @@ std::string	Handler::buildFilePath(const std::string& rawReq) const {
 
 		for (size_t i = 0; i < indexV.size(); ++i) {
 			std::string ind = _root;
-			if (ind[ind.length()-1] != '/')
+			if (ind[ind.length() - 1] != '/')
 				ind += "/";
 			ind += indexV[i];
+
 			std::ifstream file(ind.c_str());
 			if (file.good())
 				return ind;
@@ -80,12 +81,12 @@ bool	saveMultipartFile(std::string part, ServerConfig _conf) {
 		if (content.size() >= 2 && content[content.size() - 2] == '\r')
 			content.erase(content.size() - 2); //Remove last "\r\n"
 		
-		//---->>cambiar uploads por el getuploadstore + '/', si esta vacio si que pongo uploads/.
 		std::ofstream out;
-		if (_conf.getUploadStore().empty())
+		std::string uploadFolder = _conf.getUploadStore();
+		if (uploadFolder.empty())
 			out.open(("uploads/" + fileName).c_str(), std::ios::binary); //Open/create a file with that name in uploads directory.
 		else
-			out.open((_conf.getUploadStore() + "/" + fileName).c_str(), std::ios::binary); //Open/create a file with that name in uploads directory.
+			out.open((uploadFolder + "/" + fileName).c_str(), std::ios::binary); //Open/create a file with that name in uploads directory.
 		out.write(content.c_str(), content.size()); //Use write instead of <<, because binaries can have a "\0" inside the text.
 		out.close();
 	}
@@ -107,7 +108,7 @@ Response Handler::handleMULT(const Request& req) {
 			if (!saveMultipartFile(mBody[i], this->_conf))
 				throw std::runtime_error("Bad multipart");
 		}
-		FillResp::set200(res, req, "success.html", "<h1>File uploaded succesfully</h1>");
+		FillResp::set200(res, req, "<h1>File uploaded succesfully</h1>");
 	}
 	catch (const std::exception& e) {
 		FillResp::set500(res, req);
@@ -118,7 +119,7 @@ Response Handler::handleMULT(const Request& req) {
 
 // POST Method. Generates the path, generates a writing stream to the file, open the file.
 //  Then, writes the _body in the file and closes it.
-Response	Handler::handlePOST(const Request& req) {
+Response	Handler::handlePOST(Request& req) {
 	Response	res;
 	try {
 		std::string path = buildFilePath(req.getPath()); //Gen path.
@@ -126,6 +127,7 @@ Response	Handler::handlePOST(const Request& req) {
 			FillResp::set404(res, req);
 			return res;
 		}
+		req.setFinalPath(path);
 
 		std::ofstream file(path.c_str(), std::ios::out | std::ios::binary); //Open file in write mode.
 		if (!file.is_open())
@@ -144,7 +146,7 @@ Response	Handler::handlePOST(const Request& req) {
 
 // DELETE Method. Check availability of the file: generating its path, ensuring that path exists, is a directory, and is openable.
 //  Then, deletes the file.
-Response	Handler::handleDELETE(const Request& req) {
+Response	Handler::handleDELETE(Request& req) {
 	Response res;
 
 	try {
@@ -153,6 +155,7 @@ Response	Handler::handleDELETE(const Request& req) {
 			FillResp::set404(res, req);
 			return res;
 		}
+		req.setFinalPath(path);
 
 		struct stat s; //Verify path/file availability.
 		if (stat(path.c_str(), &s) != 0 || S_ISDIR(s.st_mode)) {
@@ -164,7 +167,7 @@ Response	Handler::handleDELETE(const Request& req) {
 			throw std::runtime_error("Error deleting file");
 
 		std::string responseMime = "success.html";
-		FillResp::set200(res, req, responseMime, "<h1>200 OK - File Deleted</h1>");
+		FillResp::set200(res, req, "<h1>200 OK - File Deleted</h1>");
 	}
 	catch (const std::exception& e) {
 		FillResp::set500(res, req);
@@ -175,21 +178,21 @@ Response	Handler::handleDELETE(const Request& req) {
 
 // GET Method. Check availability of the file: generating its path, ensuring that path exists, is a directory, and is openable.
 //  Then, using file content as _body, returns the generated response.
-Response	Handler::handleGET(const Request& req)
+Response	Handler::handleGET(Request& req)
 {
 	Response res;
 	try {
 		struct stat s;
 		std::string path = buildFilePath(req.getPath());
-		std::cout << "[DEBUG] buildFilePath('" << req.getPath() << "') = '" << path << "'" << std::endl;
-		if (path.empty())
+		if (path.empty()) //Maybe 404 here instead????
 			path = _root + req.getPath();
-		std::cout << "[DEBUG] Final path: '" << path << "'" << std::endl;
-		if (stat(path.c_str(), &s) != 0)
-		{
+		req.setFinalPath(path);
+		
+		if (stat(path.c_str(), &s) != 0) {
 			FillResp::set404(res, req);
 			return res;
 		}
+
 		if (S_ISDIR(s.st_mode)) {
 			// Check if autoindex is enabled for this location
 			if (isAutoindexEnabled(req.getPath())) {
@@ -203,19 +206,19 @@ Response	Handler::handleGET(const Request& req)
 				return res;
 			}
 		}
+
 		// Handle regular files
 		std::ifstream file(path.c_str(), std::ios::in | std::ios::binary);
 		if (!file.is_open()) {
 			FillResp::set403(res, req);
 			return res;
 		}
+
 		std::ostringstream buff;
 		buff << file.rdbuf();
 		file.close();
-		FillResp::set200(res, req, path, buff.str());
-		//res.setStatus(200, "OK");
-		//res.setHeader("Content-Type", getMimeType(path));
-		//res.setBody(buff.str());
+
+		FillResp::set200(res, req, buff.str());
 	}
 	catch (const std::exception& e) {
 		FillResp::set500(res, req);
@@ -228,23 +231,16 @@ Response	Handler::handleRequest(const std::string& rawReq) {
 	Request		req;
 	Response	res;
 	
-	std::cout << "[DEBUG] handleRequest called with rawReq: '" << rawReq.substr(0, 100) << "...'" << std::endl;
-
 	if (!req.parseRequestValidity(rawReq)) {
-		std::cout << "[DEBUG] parseRequestValidity FAILED!" << std::endl;
 		FillResp::set400(res, req);
 		return res;
 	}
-	
-	std::cout << "[DEBUG] parseRequestValidity OK - Method: " << req.getMethod() << ", Path: " << req.getPath() << ", Version: " << req.getVersion() << std::endl;
 
 	if(req.getVersion() != "HTTP/1.1") {
-		std::cout << "[DEBUG] Version check FAILED! Got: " << req.getVersion() << std::endl;
 		FillResp::set505(res, req);
 		return res;
 	}
 
-	std::cout << "[DEBUG] All checks passed, calling method handler..." << std::endl;
 	if (req.getMethod() == "GET") //---->>En cada metodo mirar si lo permite el webserv.conf para esa location. Miro donde estoy en el path de la cabecera http (usando tambien get_locations de serverconfig.hpp que me devuelve el vector de LocationConfigStruct)
 			return handleGET(req);
 	else if (req.getMethod() == "POST") {

@@ -11,6 +11,7 @@ class Request
 	private:
 		std::string							_method;
 		std::string							_path;
+		std::string							_finalPath;
 		std::string							_version;
 		std::map<std::string, std::string>	_headers;
 		std::string							_body;
@@ -28,15 +29,17 @@ class Request
 		bool	findBoundary(std::string& multi);
 
 		void	setFileType();
-
-	public:
+		
+		public:
 		Request();
-		static std::string	getMimeType(const std::string&);
 
+		void	setFinalPath(const std::string& path);
+		static std::string	getMimeType(const std::string&);
 		bool	parseRequestValidity(const std::string& rawReq);
 
 		const std::string&	getMethod() const;
 		const std::string&	getPath() const;
+		const std::string&	getFinalPath() const;
 		const std::string&	getVersion() const;
 		const std::string&	getType() const;
 		const std::map<std::string, std::string>&	getHeaders() const;
