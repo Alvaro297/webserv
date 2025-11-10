@@ -100,8 +100,11 @@ std::string Request::getMimeType(const std::string& ext) {
 	};
 	
 	static const std::map<std::string, std::string>	typeMap(pairs, pairs + sizeof(pairs) / sizeof(pairs[0])); //Using Iterator constructor with first and last pointers as inputs
-
-	std::map<std::string, std::string>::const_iterator it = typeMap.find(ext);
+	size_t pos = ext.rfind('.');
+	if (pos == std::string::npos)
+		return "application/octet-stream";
+	std::string pathExt = ext.substr(pos);
+	std::map<std::string, std::string>::const_iterator it = typeMap.find(pathExt);
 	if (it != typeMap.end())
 		return it->second;
 

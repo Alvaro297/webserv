@@ -86,7 +86,6 @@ ServerConfig* Server::extractFullPath(std::string fullBuffer)
 	if (host == "127.0.0.1")
 	{
 		std::string fallbackHost = "0.0.0.0:" + ss.str();
-		std::cout << "[DEBUG] Trying fallback: '" << fallbackHost << "'" << std::endl;
 		it = _listeners.find(fallbackHost);
 		if (it != _listeners.end() && !it->second.servers.empty())
 			return &it->second.servers[0];
@@ -112,10 +111,8 @@ void Server::processRequest(int fd, const std::string& fullBuffer)
 		return ;
 	}
 	//MARIO
-	std::cout << "[DEBUG] About to call parseRequestValidity..." << std::endl;
 	if (req.parseRequestValidity(fullBuffer))
 	{
-		std::cout << "[DEBUG] parseRequestValidity SUCCESS in Server.cpp" << std::endl;
 		// First, check for a matching location return (longest prefix match)
 		if (config) {
 			const std::vector<LocationConfigStruct>& locs = config->getLocations();
@@ -160,15 +157,11 @@ void Server::processRequest(int fd, const std::string& fullBuffer)
 	}
 	else
 	{
-		std::cout << "[DEBUG] parseRequestValidity FAILED in Server.cpp!" << std::endl;
 		this->_client[fd].appendWriteBuffer(generateErrorPage(400, "Bad Request"));
 		return;
 	}
-	std::cout << "[DEBUG] Creating Handler with fullPath='" << fullPath << "'" << std::endl;
-	std::cout << "[DEBUG] fullBuffer='" << fullBuffer << "'" << std::endl;
 	Handler hand(fullPath, *config);
 	Response resp = hand.handleRequest(fullBuffer);
-	std::cout << "[DEBUG] resp.getError() = " << resp.getError() << std::endl;
 	if (resp.getError() != 0)
 		this->_client[fd].appendWriteBuffer(generateErrorPage(resp.getError(), resp.getBody()));
 	else
@@ -248,12 +241,10 @@ static std::string whatMethod(std::string line)
 
 static bool lineFinish(std::string line)
 {
-	std::cout << "[DEBUG] lineFinish called with line: '" << line.substr(0, 50) << "...'" << std::endl;
 	std::string eof = "\r\n\r\n";
 	std::string contLength = "Content-Length:";
 	size_t bodyLength = 0;
 	std::string typeMethod = whatMethod(line);
-	std::cout << "[DEBUG] typeMethod: '" << typeMethod << "'" << std::endl;
 
 	size_t posOfLength = line.find(contLength);
 	if (posOfLength != std::string::npos)
@@ -273,16 +264,11 @@ static bool lineFinish(std::string line)
 		std::cout << "[DEBUG] Found eof in line" << std::endl;
 		if (typeMethod == "GET" || (typeMethod == "DELETE"
 				&& posOfLength == std::string::npos))
-		{
-			std::cout << "[DEBUG] lineFinish returning TRUE (GET/DELETE)" << std::endl;
 			return true;
-		}
 		std::string body = line.substr(line.find(eof) + eof.length());
 		bool result = body.size() >= bodyLength;
-		std::cout << "[DEBUG] lineFinish returning " << (result ? "TRUE" : "FALSE") << " (body check)" << std::endl;
 		return result;
 	}
-	std::cout << "[DEBUG] lineFinish returning FALSE (no eof found)" << std::endl;
 	return false;
 }
 

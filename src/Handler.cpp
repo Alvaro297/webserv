@@ -27,23 +27,6 @@ bool Handler::isAutoindexEnabled(const std::string& requestPath)
 	return isAutoindex;
 }
 
-static std::string getMimeTypeFromPath(const std::string& path) {
-	size_t pos = path.rfind('.');
-	if (pos == std::string::npos) return "application/octet-stream";
-	std::string ext = path.substr(pos);
-	if (ext == ".html" || ext == ".htm") return "text/html";
-	if (ext == ".css") return "text/css";
-	if (ext == ".js") return "application/javascript";
-	if (ext == ".json") return "application/json";
-	if (ext == ".png") return "image/png";
-	if (ext == ".jpg" || ext == ".jpeg") return "image/jpeg";
-	if (ext == ".gif") return "image/gif";
-	if (ext == ".svg") return "image/svg+xml";
-	if (ext == ".txt") return "text/plain";
-	if (ext == ".xml") return "application/xml";
-	return "application/octet-stream";
-} //MARIO
-
 // Generate the final path of the file. In case the raw only have a '/', need to find the first server default path in the 'index'.
 std::string	Handler::buildFilePath(const std::string& rawReq) const {
 	if (rawReq == "/") {
@@ -124,7 +107,7 @@ Response Handler::handleMULT(const Request& req) {
 			if (!saveMultipartFile(mBody[i], this->_conf))
 				throw std::runtime_error("Bad multipart");
 		}
-		FillResp::set200(res, getMimeTypeFromPath("success.html"), "<h1>File uploaded succesfully</h1>");
+		FillResp::set200(res, req, "success.html", "<h1>File uploaded succesfully</h1>");
 	}
 	catch (const std::exception& e) {
 		FillResp::set500(res, req);
@@ -180,7 +163,8 @@ Response	Handler::handleDELETE(const Request& req) {
 		if (remove(path.c_str()) != 0) //Removing/deleting file
 			throw std::runtime_error("Error deleting file");
 
-		FillResp::set200(res, getMimeTypeFromPath("success.html"), "<h1>200 OK - File Deleted</h1>");
+		std::string responseMime = "success.html";
+		FillResp::set200(res, req, responseMime, "<h1>200 OK - File Deleted</h1>");
 	}
 	catch (const std::exception& e) {
 		FillResp::set500(res, req);
@@ -228,7 +212,7 @@ Response	Handler::handleGET(const Request& req)
 		std::ostringstream buff;
 		buff << file.rdbuf();
 		file.close();
-		FillResp::set200(res, getMimeTypeFromPath(path), buff.str());
+		FillResp::set200(res, req, path, buff.str());
 		//res.setStatus(200, "OK");
 		//res.setHeader("Content-Type", getMimeType(path));
 		//res.setBody(buff.str());

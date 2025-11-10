@@ -28,10 +28,10 @@ class Request
 		bool	findBoundary(std::string& multi);
 
 		void	setFileType();
-		static std::string	getMimeType(const std::string&);
 
 	public:
 		Request();
+		static std::string	getMimeType(const std::string&);
 
 		bool	parseRequestValidity(const std::string& rawReq);
 
