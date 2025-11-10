@@ -185,7 +185,7 @@
 ### Lo que falta Persona B
 - **✅ buildFilePath() hardcoded
 - ⏳ handleGET() NO maneja directorios
-- ⏳ Upload storage hardcoded
+- **✅ Upload storage hardcoded
 - ⏳ Location-based method validation
 - **✅ Handler NO recibe ServerConfig
 
@@ -477,4 +477,5 @@ int socket_fd = accept(...);
 // CORRECTO: esperar POLLIN con poll()
 
 ```
+
 
