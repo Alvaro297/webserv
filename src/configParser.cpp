@@ -121,6 +121,23 @@ bool ConfigParser::fillLocation(const std::string& block, LocationConfigStruct& 
 			}
 		} else if (key == "cgi_extension") {
 			std::string ext, bin; ls >> ext >> bin; if (!ext.empty()) location.cgi_extensions[ext] = bin;
+		} else if (key == "cgi_ext") { //MARIO
+			// Support legacy short directive: can be a list of extensions or pairs (ext bin)
+			std::vector<std::string> tokens;
+			std::string tkn;
+			while (ls >> tkn) tokens.push_back(tkn);
+			for (size_t i = 0; i < tokens.size(); ) {
+				std::string ext = tokens[i];
+				// If next token looks like an absolute path (starts with '/') treat it as binary
+				if (i + 1 < tokens.size() && !tokens[i+1].empty() && tokens[i+1][0] == '/') {
+					location.cgi_extensions[ext] = tokens[i+1];
+					i += 2;
+				} else {
+					// Map extension to empty binary (caller must set interpreter globally or in server)
+					location.cgi_extensions[ext] = "";
+					i += 1;
+				}
+			} //MARIO
 		} else if (key == "cgi_enable") {
 			std::string val; ls >> val; location.cgi_enable = (val == "on" || val == "true");
 		} else if (key == "return") {

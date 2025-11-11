@@ -48,14 +48,20 @@ std::string	Handler::buildFilePath(const std::string& rawReq) const {
 }
 
 //Save the content of _multiBody in different files.
-bool	saveMultipartFile(std::string part, ServerConfig _conf) {
+bool	saveMultipartFile(std::string part, const std::string& uploadFolder) {
 	try {
 		size_t	dispStart = part.find("Content-Disposition:");
 
 		size_t	nameStart = part.find("name=\"", dispStart);
 
-		if (nameStart == std::string::npos) //There is no "name"
-			return false; //RFC says parameter "name=" must exist, so I consider this as an error
+		if (nameStart == std::string::npos) //MARIO
+		{
+			// Not a proper form-data part (could be CRLF/preamble) — ignore it
+			std::ofstream dbg("/tmp/upload_debug.log", std::ios::app);
+			if (dbg.is_open()) dbg << "[DEBUG] Part ignored: no name found\n";
+			return true;
+			// return false;
+		}
 
 		size_t	nameEnd = part.find("\"", nameStart + 6);
 		std::string	name =part.substr(nameStart + 6, nameEnd - (nameStart + 6));
@@ -82,11 +88,11 @@ bool	saveMultipartFile(std::string part, ServerConfig _conf) {
 			content.erase(content.size() - 2); //Remove last "\r\n"
 		
 		std::ofstream out;
-		std::string uploadFolder = _conf.getUploadStore();
+		/////std::string uploadFolder = _conf.getUploadStore(); //MARIO
 		if (uploadFolder.empty())
-			out.open(("uploads/" + fileName).c_str(), std::ios::binary); //Open/create a file with that name in uploads directory.
+			out.open(("uploads/" + fileName).c_str(), std::ios::binary); //MARIO
 		else
-			out.open((uploadFolder + "/" + fileName).c_str(), std::ios::binary); //Open/create a file with that name in uploads directory.
+			out.open((uploadFolder + "/" + fileName).c_str(), std::ios::binary); //MARIO
 		out.write(content.c_str(), content.size()); //Use write instead of <<, because binaries can have a "\0" inside the text.
 		out.close();
 	}
@@ -104,8 +110,26 @@ Response Handler::handleMULT(const Request& req) {
 	try {
 		std::vector<std::string> mBody = req.getMultiBody();
 
+		//MARIO
+		// Determine upload folder using longest location match
+		std::string uploadFolder = this->_conf.getUploadStore();
+		std::string reqPath = req.getPath();
+		// If a location-specific upload store exists, prefer it (search locations)
+		{
+			size_t bestLen = 0;
+			const std::vector<LocationConfigStruct>& locs = this->_conf.getLocations();
+			for (size_t i = 0; i < locs.size(); ++i) {
+				const LocationConfigStruct& loc = locs[i];
+				if (!loc.upload_store.empty() && reqPath.compare(0, loc.path.length(), loc.path) == 0 && loc.path.length() > bestLen) {
+					bestLen = loc.path.length();
+					uploadFolder = loc.upload_store;
+				}
+			}
+		}
+		//MARIO
+
 		for (size_t i = 0; i < mBody.size(); ++i) {
-			if (!saveMultipartFile(mBody[i], this->_conf))
+			if (!saveMultipartFile(mBody[i], uploadFolder))
 				throw std::runtime_error("Bad multipart");
 		}
 		FillResp::set200(res, req, "<h1>File uploaded succesfully</h1>");

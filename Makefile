@@ -1,5 +1,5 @@
 CXX      := g++
-CXXFLAGS := -Wall -Wextra -Werror -std=c++98 -Iinclude -g
+CXXFLAGS := -Wall -Wextra -Werror -std=c++98 -Iinc -g
 
 NAME     := webserv
 SRC_DIR  := src
