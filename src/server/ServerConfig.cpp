@@ -205,5 +205,3 @@ void ServerConfig::printConfig() const
 
 	std::cout << std::endl;
 }
-
-bool ServerConfig::supportsExtension(const std::string& ext) const { return this->cgi_extensions.count(ext) > 0; }

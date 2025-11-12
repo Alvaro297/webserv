@@ -2,6 +2,7 @@
 # define SERVER_HPP
 # include "CGIHandler.hpp"
 # include "ServerConfig.hpp"
+# include "Request.hpp"
 # include <iostream>
 # include <vector>
 # include <map>
@@ -34,6 +35,11 @@ private:
 	std::map<std::string,Listeners>	_listeners; //Host:puerto y listener fd
 	std::map<int, Client> _client;
 
+	void createListenersAndClients(struct pollfd &tmp, std::vector<struct pollfd> &fds);
+	void handlePollEvents(std::vector<struct pollfd> &fds);
+	const LocationConfigStruct* findBestLocation(ServerConfig* config, const std::string& reqPath);
+	bool handleRedirection(int fd, const LocationConfigStruct* bestLoc);
+	bool handleCGI(int fd, const Request& req, const LocationConfigStruct* bestLoc, const std::string& fullPath, ServerConfig* config);
 	void initSockets(); //Inicializar sockets (Rellena _listeners) -Falta
 	void closeSockets(); //Cierra los sockets (No todos) -Falta
 	void createListener(const ServerConfig& config, const std::string& fullhost);

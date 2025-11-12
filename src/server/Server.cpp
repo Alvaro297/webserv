@@ -95,6 +95,60 @@ ServerConfig* Server::extractFullPath(std::string fullBuffer)
 }
 
 
+const LocationConfigStruct* Server::findBestLocation(ServerConfig* config, const std::string& reqPath)
+{
+	if (!config)
+		return NULL;
+		
+	const std::vector<LocationConfigStruct>& locs = config->getLocations();
+	size_t bestLen = 0;
+	const LocationConfigStruct* bestLoc = NULL;
+	
+	for (size_t i = 0; i < locs.size(); ++i) {
+		const LocationConfigStruct& loc = locs[i];
+		if (reqPath.compare(0, loc.path.length(), loc.path) == 0 && loc.path.length() > bestLen) {
+			bestLen = loc.path.length();
+			bestLoc = &loc;
+		}
+	}
+	return bestLoc;
+}
+
+bool Server::handleRedirection(int fd, const LocationConfigStruct* bestLoc)
+{
+	if (!bestLoc || bestLoc->return_code == 0)
+		return false;
+		
+	Response r;
+	int code = bestLoc->return_code;
+	std::string msg = (code == 301) ? "Moved Permanently" : (code == 302) ? "Found" : "Redirect";
+	r.setStatus(code, msg);
+	std::string locurl = bestLoc->return_url;
+	if (locurl.empty()) locurl = "/";
+	r.setHeader("Location", locurl);
+	r.setHeader("Content-Type", "text/html");
+	r.setBody(std::string("<html><body><h1>") + intToString(code) + " " + msg + "</h1></body></html>");
+	this->_client[fd].appendWriteBuffer(r.genResponseString());
+	return true;
+}
+
+bool Server::handleCGI(int fd, const Request& req, const LocationConfigStruct* bestLoc, const std::string& fullPath, ServerConfig* config)
+{
+	size_t extensionDot = req.getPath().find('.');
+	std::string extension;
+	if (extensionDot != std::string::npos)
+		extension = req.getPath().substr(extensionDot);
+	if (!config || extension.empty())
+		return false;
+	bool supportExtension = (bestLoc && bestLoc->cgi_extensions.count(extension) > 0);
+	if (!supportExtension)
+		return false;
+	CGIHandler cgiHandler(bestLoc->cgi_extensions, fullPath, config->getServerName(), intToString(config->getPort()));
+	Response resp = cgiHandler.handle(req);
+	this->_client[fd].appendWriteBuffer(resp.genResponseString());
+	return true;
+}
+
 void Server::processRequest(int fd, const std::string& fullBuffer)
 {
 	std::cout << "[DEBUG] processRequest called with fd=" << fd << std::endl;
@@ -102,64 +156,34 @@ void Server::processRequest(int fd, const std::string& fullBuffer)
 	Request req = Request();
 	ServerConfig* config = extractFullPath(fullBuffer);
 	std::cout << "[DEBUG] extractFullPath returned: " << (config ? "valid config" : "NULL") << std::endl;
-
 	if (config)
+	{
 		fullPath = config->getRoot();
+		if (fullPath[0] != '/')
+			fullPath = "./" + fullPath;
+	}
 	else
 	{
 		this->_client[fd].appendWriteBuffer(generateErrorPage(400, "Config not found"));
 		return ;
 	}
-	//MARIO
 	if (req.parseRequestValidity(fullBuffer))
 	{
-		// First, check for a matching location return (longest prefix match)
-		if (config) {
-			const std::vector<LocationConfigStruct>& locs = config->getLocations();
-			const LocationConfigStruct* bestLoc = NULL;
-			size_t bestLen = 0;
-			std::string reqPath = req.getPath();
-			for (size_t i = 0; i < locs.size(); ++i) {
-				const LocationConfigStruct& loc = locs[i];
-				if (reqPath.compare(0, loc.path.length(), loc.path) == 0 && loc.path.length() > bestLen) {
-					bestLen = loc.path.length();
-					bestLoc = &loc;
-				}
-			}
-			if (bestLoc && bestLoc->return_code != 0) {
-				Response r;
-				int code = bestLoc->return_code;
-				std::string msg = (code == 301) ? "Moved Permanently" : (code == 302) ? "Found" : "Redirect";
-				r.setStatus(code, msg);
-				std::string locurl = bestLoc->return_url;
-				if (locurl.empty()) locurl = "/";
-				r.setHeader("Location", locurl);
-				r.setHeader("Content-Type", "text/html");
-				r.setBody(std::string("<html><body><h1>") + intToString(code) + " " + msg + "</h1></body></html>");
-				this->_client[fd].appendWriteBuffer(r.genResponseString());
-				return;
-			}
-		}
-
-		// If not a return redirection, check for CGI by extension
-		// MARIO
-		size_t extensionDot = req.getPath().find('.');
-		std::string extension;
-		if (extensionDot != std::string::npos) //MARIO
-			extension = req.getPath().substr(extensionDot); // MARIO
-		if (config && !extension.empty() && config->supportsExtension(extension)) // MARIO
-		{
-			CGIHandler cgiHandler(config->getCgiExtensions(), fullPath, config->getServerName(), intToString(config->getPort()));
-			Response resp = cgiHandler.handle(req);
-			this->_client[fd].appendWriteBuffer(resp.genResponseString());
+		// Find best matching location
+		const LocationConfigStruct* bestLoc = findBestLocation(config, req.getPath());
+		// Handle redirections first
+		if (handleRedirection(fd, bestLoc))
 			return;
-		}
+		// Handle CGI if applicable
+		if (handleCGI(fd, req, bestLoc, fullPath, config))
+			return;
 	}
 	else
 	{
 		this->_client[fd].appendWriteBuffer(generateErrorPage(400, "Bad Request"));
 		return;
 	}
+	// If no redirect or CGI, handle with regular Handler
 	Handler hand(fullPath, *config);
 	Response resp = hand.handleRequest(fullBuffer);
 	if (resp.getError() != 0)
@@ -405,20 +429,9 @@ void Server::closeServer()
 	}
 }
 
-void Server::run()
+void Server::createListenersAndClients(struct pollfd &tmp, std::vector<struct pollfd> &fds)
 {
-	int ready;
-	struct pollfd tmp;
-
-	signal(SIGINT, signalHandler);
-	signal(SIGPIPE, SIG_IGN);
-	//Falta controlar error 503 (Muchos clientes)
-	//Loop principal
-	while (!g_shutdown)
-	{
-		std::vector<struct pollfd> fds;
-		fds.clear();
-		for (std::map<std::string, Listeners>::iterator it = _listeners.begin();
+	for (std::map<std::string, Listeners>::iterator it = _listeners.begin();
 			 it != _listeners.end(); ++it)
 		{
 			tmp.fd = it->second.fd;
@@ -436,6 +449,56 @@ void Server::run()
 			pfd.revents = 0;
 			fds.push_back(pfd);
 		}
+}
+
+void Server::handlePollEvents(std::vector<struct pollfd> &fds)
+{
+	for (size_t i = 0; i < fds.size(); i++)
+	{
+		if (fds[i].revents & POLLERR)
+		{
+			closeClient(fds[i].fd, "Socket error");
+			continue;
+		}
+		if (fds[i].revents & POLLNVAL)
+		{
+			std::cerr << "[ERROR] Invalid fd=" << fds[i].fd << std::endl;
+			_client.erase(fds[i].fd);
+			continue;
+		}
+		if (fds[i].revents & POLLIN)
+		{
+			if (isListener(this->_listeners, fds[i].fd))
+				acceptSocket(fds[i].fd);
+			else
+				readClient(fds[i].fd);
+		}
+		if (fds[i].revents & POLLOUT)
+		{
+			bool success = this->_client[fds[i].fd].writeClient();
+			if (!success)
+				closeClient(fds[i].fd, "Error writing to client");
+		}
+		if (fds[i].revents & POLLHUP)
+			closeClient(fds[i].fd, "Client hung up");
+	}
+}
+
+
+void Server::run()
+{
+	int ready;
+	struct pollfd tmp;
+
+	signal(SIGINT, signalHandler);
+	signal(SIGPIPE, SIG_IGN);
+	//Falta controlar error 503 (Muchos clientes)
+	//Loop principal
+	while (!g_shutdown)
+	{
+		std::vector<struct pollfd> fds;
+		fds.clear();
+		createListenersAndClients(tmp, fds);
 		if (fds.empty())
 		{
 			std::cerr << "No file descriptors to poll." << std::endl;
@@ -464,35 +527,7 @@ void Server::run()
 			std::cerr << "poll() failed: " << strerror(errno) << std::endl;
 			break;
 		}
-		for (size_t i = 0; i < fds.size(); i++)
-		{
-			if (fds[i].revents & POLLERR)
-			{
-				closeClient(fds[i].fd, "Socket error");
-				continue;
-			}
-			if (fds[i].revents & POLLNVAL)
-			{
-				std::cerr << "[ERROR] Invalid fd=" << fds[i].fd << std::endl;
-				_client.erase(fds[i].fd);
-				continue;
-			}
-			if (fds[i].revents & POLLIN)
-			{
-				if (isListener(this->_listeners, fds[i].fd))
-					acceptSocket(fds[i].fd);
-				else
-					readClient(fds[i].fd);
-			}
-			if (fds[i].revents & POLLOUT)
-			{
-				bool success = this->_client[fds[i].fd].writeClient();
-				if (!success)
-					closeClient(fds[i].fd, "Error writing to client");
-			}
-			if (fds[i].revents & POLLHUP)
-				closeClient(fds[i].fd, "Client hung up");
-		}
+		handlePollEvents(fds);
 	}
 	closeServer();
 }

@@ -80,9 +80,6 @@ public:
 	void setUploadStore(const std::string& store);
 	void setCgiExtensions(const std::map<std::string, std::string>& exts);
 	void setCgiEnable(const bool value);
-
-	bool supportsExtension(const std::string& ext) const;
-	//Faltan funciones para escuchar al cliente (Para cuando el server se pueda conectar xd)
 };
 
 

@@ -247,5 +247,3 @@ Response CGIHandler::handle(const Request& req) {
     res.setBody(body);
     return res;
 }
-
-bool CGIHandler::supportsExtension(const std::string& ext) const { return _cgiExts.count(ext) > 0; }

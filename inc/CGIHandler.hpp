@@ -12,9 +12,6 @@ public:
     CGIHandler(const std::map<std::string, std::string>& cgiExts, const std::string& root,
                const std::string& serverName = "localhost", const std::string& serverPort = "80");
 
-    // Comprueba si una extensión (incluyendo el punto, p.ej. ".py") está registrada como CGI
-    bool supportsExtension(const std::string& ext) const;
-
     // Ejecuta el script CGI referido por la request. Devuelve un Response generado a partir
     // de la salida del CGI o de un error si algo falla.
     Response handle(const Request& req);
