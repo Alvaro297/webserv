@@ -169,12 +169,9 @@ void Server::processRequest(int fd, const std::string& fullBuffer)
 	}
 	if (req.parseRequestValidity(fullBuffer))
 	{
-		// Find best matching location
 		const LocationConfigStruct* bestLoc = findBestLocation(config, req.getPath());
-		// Handle redirections first
 		if (handleRedirection(fd, bestLoc))
 			return;
-		// Handle CGI if applicable
 		if (handleCGI(fd, req, bestLoc, fullPath, config))
 			return;
 	}
@@ -183,7 +180,6 @@ void Server::processRequest(int fd, const std::string& fullBuffer)
 		this->_client[fd].appendWriteBuffer(generateErrorPage(400, "Bad Request"));
 		return;
 	}
-	// If no redirect or CGI, handle with regular Handler
 	Handler hand(fullPath, *config);
 	Response resp = hand.handleRequest(fullBuffer);
 	if (resp.getError() != 0)
