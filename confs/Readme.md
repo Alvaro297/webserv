@@ -1,83 +1,75 @@
-# Guía básica de configuración — `webserv.conf`
+# Configuración `.conf` — Referencia Rápida
 
-Este documento resume las principales configuraciones del archivo `.conf` del servidor.
+## Estructura básica
 
----
-
-## Estructura general
-
-* Los bloques se definen con llaves `{ ... }`.
-* Los comentarios comienzan con `#`.
-* Cada directiva termina con `;`.
-
-### Bloques principales
-
-* **server { ... }** → Define un sitio o virtual host.
-* **location <ruta> { ... }** → Define reglas específicas para una parte de la URL.
-
----
-
-## Directivas del bloque `server`
-
-| Directiva                        | Descripción                                        | Ejemplo                                   |                 |
-| -------------------------------- | -------------------------------------------------- | ----------------------------------------- | --------------- |
-| `listen <ip>:<puerto>`           | Define en qué IP y puerto escucha el servidor.     | `listen 127.0.0.1:8080;`                  |                 |
-| `server_name <nombre>`           | Nombre del sitio para el encabezado `Host`.        | `server_name ejemplo.local;`              |                 |
-| `root <ruta>`                    | Carpeta base de los archivos del sitio.            | `root /var/www/ejemplo;`                  |                 |
-| `error_page <código> <ruta>`     | Página personalizada para errores.                 | `error_page 404 /errors/404.html;`        |                 |
-| `client_max_body_size <tamaño>`  | Tamaño máximo del cuerpo de una petición.          | `client_max_body_size 10m;`               |                 |
-| `autoindex on                    | off`                                               | Permite listar archivos en un directorio. | `autoindex on;` |
-| `index <archivo>`                | Archivo que se sirve por defecto en un directorio. | `index index.html;`                       |                 |
-| `upload_store <ruta>`            | Carpeta donde se guardan archivos subidos.         | `upload_store /uploads;`                  |                 |
-| `cgi_extension <ext> <programa>` | Define un intérprete para archivos CGI.            | `.php /usr/bin/php-cgi;`                  |                 |
-
----
-
-## Directivas del bloque `location`
-
-| Directiva               | Descripción                             | Ejemplo                                       |                     |
-| ----------------------- | --------------------------------------- | --------------------------------------------- | ------------------- |
-| `methods <...>`         | Lista de métodos HTTP permitidos.       | `methods GET POST;`                           |                     |
-| `return <código> <url>` | Redirige o devuelve una respuesta fija. | `return 301 /nueva;`                          |                     |
-| `root <ruta>`           | Carpeta base solo para esa ruta.        | `root /var/www/static;`                       |                     |
-| `autoindex on           | off`                                    | Activa o desactiva el listado de directorios. | `autoindex off;`    |
-| `index <archivo>`       | Archivo por defecto dentro de la ruta.  | `index index.html;`                           |                     |
-| `upload_enable on       | off`                                    | Permite o bloquea subidas de archivos.        | `upload_enable on;` |
-| `upload_store <ruta>`   | Define dónde guardar subidas.           | `upload_store /var/www/uploads;`              |                     |
-| `cgi_enable on          | off`                                    | Activa o no la ejecución de CGI.              | `cgi_enable on;`    |
-
----
-
-## Funcionamiento básico
-
-1. El servidor elige el bloque `server` según el puerto e IP.
-2. Dentro de él, busca la `location` que coincida con la URL.
-3. Combina `root` + URL para encontrar el archivo.
-4. Si el archivo es un CGI, lo ejecuta; si es estático, lo sirve.
-5. Si es un directorio, intenta servir el `index` o genera listado si `autoindex on`.
-6. Usa las páginas de error definidas con `error_page` en caso de fallo.
-
----
-
-## Ejemplo corto
-
-```conf
 server {
-    listen 127.0.0.1:8080;
-    server_name ejemplo.local;
-    root /var/www/ejemplo;
+    host 0.0.0.0;
+    port 8080;
+    server_name localhost;
+    root www/;
     index index.html;
-    error_page 404 /errors/404.html;
-
-    location /static {
-        methods GET;
+    client_max_body_size 5M;
+    
+    error_page 404 www/errors/404.html;
+    error_page 500 www/errors/500.html;
+    
+    location / {
+        root www/;
+        index index.html;
+        methods GET HEAD;
         autoindex on;
     }
-
+    
+    location /cgi {
+        root www/cgi/;
+        methods GET POST HEAD;
+        cgi_enable on;
+        cgi_extension .py /usr/bin/python3;
+    }
+    
     location /upload {
-        methods POST;
+        root www/upload/;
+        methods GET POST HEAD;
         upload_enable on;
-        upload_store /var/www/uploads;
+        upload_store www/uploads/;
+    }
+    
+    location /delete {
+        root www/delete/;
+        methods GET DELETE HEAD;
+    }
+    
+    location /redirect {
+        return 302 https://example.com;
     }
 }
 ```
+
+## Directivas principales
+
+### Bloque `server`
+- `host` - IP de escucha (0.0.0.0 = todas)
+- `port` - Puerto del servidor
+- `server_name` - Nombre del host
+- `root` - Directorio raíz
+- `index` - Archivo por defecto
+- `client_max_body_size` - Tamaño máximo (ej: 5M, 10M)
+- `error_page <código> <ruta>` - Páginas de error personalizadas
+
+### Bloque `location`
+- `root` - Directorio para esta ruta
+- `index` - Archivo por defecto
+- `methods` - Métodos permitidos (GET, POST, DELETE, HEAD)
+- `autoindex on/off` - Listado de directorios
+- `upload_enable on/off` - Permitir subida de archivos
+- `upload_store` - Carpeta destino para uploads
+- `cgi_enable on/off` - Ejecutar scripts CGI
+- `cgi_extension <ext> <intérprete>` - Extensión y ejecutable CGI
+- `return <código> <url>` - Redirección (301/302)
+
+## Notas
+- Las rutas pueden ser relativas al ejecutable
+- `methods` controla qué verbos HTTP acepta cada location
+- Las redirecciones 301 son permanentes (se cachean), 302 son temporales
+- CGI requiere la ruta completa al intérprete (ej: `/usr/bin/python3`)
+
