@@ -289,7 +289,11 @@ Response	Handler::handleRequest(const std::string& rawReq) {
 		return res;
 	}
 
-	if (req.getMethod() == "GET") //---->>En cada metodo mirar si lo permite el webserv.conf para esa location. Miro donde estoy en el path de la cabecera http (usando tambien get_locations de serverconfig.hpp que me devuelve el vector de LocationConfigStruct)
+	if (!isMethodAllowed(req.getMethod(), req.getFinalPath())){
+		FillResp::set405(res, req);
+		return res;
+	}
+	if (req.getMethod() == "GET")
 			return handleGET(req);
 	else if (req.getMethod() == "POST") {
 		if (!(req.getBound()).empty()) //POST can have _multiBody, so if _bound is setted, use handleMULT() instead of handlePOST()
@@ -302,4 +306,41 @@ Response	Handler::handleRequest(const std::string& rawReq) {
 		FillResp::set405(res, req);
 		return res;
 	}
+}
+
+// Ensure that the method of the request is allowed by the location in which we are
+bool Handler::isMethodAllowed(const std::string& method, const std::string& path) const {
+	const LocationConfigStruct* loc = findActualLocation(path);
+	if (!loc)
+		return true; //If there is no location, we accept every METHOD
+	
+	const std::vector<std::string>& allowed = loc->methods;
+	if (allowed.empty())
+		return true; //If the location doesn't have rules, we accept every METHOD
+
+	for (size_t i = 0; i < allowed.size(); ++i) {
+		if (allowed[i] == method)
+			return true;
+	}
+
+	return false;
+}
+
+// Find the .conf location in which we are
+const LocationConfigStruct* Handler::findActualLocation(const std::string& reqPath) const {
+	const std::vector<LocationConfigStruct>& locations = _conf.getLocations(); //Get locations vector
+
+	const LocationConfigStruct* bestMatch = NULL;
+
+	size_t bestLen = 0;
+
+	for (size_t i = 0; i < locations.size(); ++i) { //Check, in every location, for the most similar path
+		const std::string& locPath = locations[i].path;
+		if (reqPath.find(locPath) == 0 && locPath.size() > bestLen) { //Check, not only for a coincidence but, for the biggest length (the one that has most in common)
+			bestMatch = &locations[i];
+			bestLen = locPath.size();
+		}
+	}
+
+	return bestMatch;
 }
