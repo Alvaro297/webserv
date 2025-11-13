@@ -23,6 +23,7 @@ private:
 	std::string readBuffer;
 	std::string writeBuffer;
 	time_t		lastActivity;
+	int			shouldClose;
 public:
 	Client();
 	Client(int fd);
@@ -35,11 +36,12 @@ public:
 	const std::string& getReadBuffer() const;
 	const std::string& getWriteBuffer() const;
 	const time_t& getLastActivity() const;
-
+	int getShouldClose() const;
 	// Setters
 	void appendReadBuffer(const std::string& data);
 	void appendWriteBuffer(const std::string& data);
 	void setLastActivity(const time_t& time);
+	void setShouldClose(const int shouldCloseChange);
 	void clearReadBuffer();
 	void clearWriteBuffer();
 	bool writeClient();

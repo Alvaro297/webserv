@@ -49,6 +49,21 @@ std::string generateErrorPage(const int errorCode, const std::string bodyError)
 	return page.str();
 }
 
+std::string generateErrorResponse(const int errorCode, const std::string bodyError)
+{
+	std::string htmlBody = generateErrorPage(errorCode, bodyError);
+	std::ostringstream response;
+	
+	response << "HTTP/1.1 " << errorCode << " " << bodyError << "\r\n";
+	response << "Content-Type: text/html\r\n";
+	response << "Content-Length: " << htmlBody.length() << "\r\n";
+	response << "Connection: close\r\n";
+	response << "\r\n";
+	response << htmlBody;
+	
+	return response.str();
+}
+
 ServerConfig* Server::extractFullPath(std::string fullBuffer)
 {
 	int port;
@@ -195,7 +210,8 @@ void Server::processRequest(int fd, const std::string& fullBuffer)
 	}
 	else
 	{
-		this->_client[fd].appendWriteBuffer(generateErrorPage(400, "Config not found"));
+		this->_client[fd].appendWriteBuffer(generateErrorResponse(400, "Config not found"));
+		this->_client[fd].setShouldClose(400);
 		return ;
 	}
 	if (req.parseRequestValidity(fullBuffer))
@@ -208,13 +224,14 @@ void Server::processRequest(int fd, const std::string& fullBuffer)
 	}
 	else
 	{
-		this->_client[fd].appendWriteBuffer(generateErrorPage(400, "Bad Request"));
+		this->_client[fd].appendWriteBuffer(generateErrorResponse(400, "Bad Request"));
+		this->_client[fd].setShouldClose(400);
 		return;
 	}
 	Handler hand(fullPath, *config);
 	Response resp = hand.handleRequest(fullBuffer);
 	if (resp.getError() != 0)
-		this->_client[fd].appendWriteBuffer(generateErrorPage(resp.getError(), resp.getBody()));
+		this->_client[fd].appendWriteBuffer(generateErrorResponse(resp.getError(), resp.getBody()));
 	else
 		this->_client[fd].appendWriteBuffer(resp.genResponseString());
 }
@@ -285,7 +302,7 @@ static std::string whatMethod(std::string line)
 
 	typeMethod = line.substr(0, firstSpace);
 	if (typeMethod != "POST" && typeMethod != "GET"
-		&& typeMethod != "DELETE" && typeMethod != "FETCH" && typeMethod != "HEAD")
+		&& typeMethod != "DELETE")
 		return "GET";
 	return typeMethod;
 }
@@ -360,10 +377,10 @@ void Server::readClient(int fds)
 
 	if (this->_client[fds].getReadBuffer().size() > maxBodySize)
 	{
-		std::string response = generateErrorPage(413, "Payload Too Large");
+		std::string response = generateErrorResponse(413, "Payload Too Large");
+		this->_client[fds].setShouldClose(413);
 		this->_client[fds].clearReadBuffer();
 		this->_client[fds].appendWriteBuffer(response);
-		closeClient(fds, "Request too large");
 		return;
 	}
 	std::vector<char> buffer(4096);
@@ -413,9 +430,8 @@ void Server::acceptSocket(int fds)
 	fcntl(client_fd, F_SETFL, O_NONBLOCK);
 	if (this->_client.size() >= 1000)
 	{
-		std::string response503 = generateErrorPage(503, "Service Unavailable");
-		this->_client[client_fd].appendWriteBuffer(response503);
-		send(client_fd, response503.c_str(), response503.size(), 0);
+		std::string response503 = generateErrorResponse(503, "Service Unavailable");
+		send(client_fd, response503.c_str(), response503.size(), MSG_NOSIGNAL);
 		close(client_fd);
 		return;
 	}
@@ -478,6 +494,28 @@ void Server::createListenersAndClients(struct pollfd &tmp, std::vector<struct po
 		}
 }
 
+std::string getReasonClose(int reason)
+{
+	switch (reason)
+	{
+	case 413:
+		return "Request entity too large - closing connection";
+		break;
+	case 503:
+		return "Service unavailable - server overloaded";
+		break;
+	case 400:
+		return "Bad request - malformed HTTP request";
+		break;
+	case 408:
+		return "Request timeout - client took too long";
+		break;
+	default:
+		return "Unknown error - closing connection";
+		break;
+	}
+}
+
 void Server::handlePollEvents(std::vector<struct pollfd> &fds)
 {
 	for (size_t i = 0; i < fds.size(); i++)
@@ -505,6 +543,9 @@ void Server::handlePollEvents(std::vector<struct pollfd> &fds)
 			bool success = this->_client[fds[i].fd].writeClient();
 			if (!success)
 				closeClient(fds[i].fd, "Error writing to client");
+			else if (this->_client[fds[i].fd].getShouldClose() > 0 && 
+					 this->_client[fds[i].fd].getWriteBuffer().empty())
+				closeClient(fds[i].fd, getReasonClose(this->_client[fds[i].fd].getShouldClose()));
 		}
 		if (fds[i].revents & POLLHUP)
 			closeClient(fds[i].fd, "Client hung up");
@@ -534,13 +575,14 @@ void Server::run()
 		for (std::map<int,Client>::iterator it = _client.begin(); it != _client.end();)
 		{
 			time_t now = time(NULL);
-			// Esto es el timeout modificarlo a vuestra medida para si quereis seguir o no (Actualmente en 12 sec)
-			if ((now - it->second.getLastActivity()) > 1200)
+			// Timeout de 30 segundos para requests incompletos
+			if ((now - it->second.getLastActivity()) > 10)
 			{
-				std::string response408 = generateErrorPage(408, "Request Timeout");
+				std::string response408 = generateErrorResponse(408, "Request Timeout");
+				this->_client[it->first].clearWriteBuffer();
 				this->_client[it->first].appendWriteBuffer(response408);
-				close(it->first);
-				this->_client.erase(it++);
+				this->_client[it->first].setShouldClose(408);
+				++it;
 			}
 			else
 				++it;
