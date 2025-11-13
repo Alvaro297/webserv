@@ -132,7 +132,31 @@ Response Handler::handleMULT(const Request& req) {
 			if (!saveMultipartFile(mBody[i], uploadFolder))
 				throw std::runtime_error("Bad multipart");
 		}
-		FillResp::set200(res, req, "<h1>File uploaded succesfully</h1>");
+		std::string successHtml = 
+			"<!DOCTYPE html>\n"
+			"<html lang='es'>\n"
+			"<head>\n"
+			"    <meta charset='UTF-8'>\n"
+			"    <meta name='viewport' content='width=device-width, initial-scale=1.0'>\n"
+			"    <title>Upload Exitoso</title>\n"
+			"    <style>\n"
+			"        body { font-family: Arial, sans-serif; background-color: #f4f4f9; margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }\n"
+			"        .container { text-align: center; background: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 500px; }\n"
+			"        h1 { color: #27ae60; margin-bottom: 20px; }\n"
+			"        p { color: #555; margin-bottom: 30px; font-size: 18px; }\n"
+			"        .btn { display: inline-block; padding: 12px 30px; background-color: #4a90e2; color: white; text-decoration: none; border-radius: 5px; font-size: 16px; transition: background-color 0.3s; }\n"
+			"        .btn:hover { background-color: #357abd; }\n"
+			"    </style>\n"
+			"</head>\n"
+			"<body>\n"
+			"    <div class='container'>\n"
+			"        <h1>✓ Archivo Subido Exitosamente</h1>\n"
+			"        <p>Tu archivo ha sido guardado correctamente en el servidor.</p>\n"
+			"        <a href='/' class='btn'>🏠 Volver al Inicio</a>\n"
+			"    </div>\n"
+			"</body>\n"
+			"</html>";
+		FillResp::set200(res, req, successHtml);
 	}
 	catch (const std::exception& e) {
 		FillResp::set500(res, req);
