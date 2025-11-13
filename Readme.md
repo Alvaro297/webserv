@@ -186,7 +186,7 @@
 - **✅ buildFilePath() hardcoded
 - ⏳ handleGET() NO maneja directorios
 - **✅ Upload storage hardcoded
-- ⏳ Location-based method validation
+- **✅ Location-based method validation
 - **✅ Handler NO recibe ServerConfig
 
 ### Testing conjunto
@@ -477,5 +477,6 @@ int socket_fd = accept(...);
 // CORRECTO: esperar POLLIN con poll()
 
 ```
+
 
 
