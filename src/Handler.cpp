@@ -289,7 +289,7 @@ Response	Handler::handleRequest(const std::string& rawReq) {
 		return res;
 	}
 
-	if (!isMethodAllowed(req.getMethod(), req.getFinalPath())){
+	if (!isMethodAllowed(req.getMethod(), req.getPath())){
 		FillResp::set405(res, req);
 		return res;
 	}
