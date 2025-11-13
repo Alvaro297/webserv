@@ -87,18 +87,20 @@ int CGIHandler::executeCGIProcess(const std::string& scriptPath, const std::stri
         close(inpipe[0]); close(inpipe[1]); close(outpipe[0]); close(outpipe[1]);
 
         // Change working directory to the script directory so relative paths inside script work
+        std::string scriptFileName = scriptPath;
         size_t lastSlash = scriptPath.rfind('/');
         if (lastSlash != std::string::npos) {
             std::string dir = scriptPath.substr(0, lastSlash);
+            scriptFileName = scriptPath.substr(lastSlash + 1); // just the filename
             chdir(dir.c_str());
         }
 
         std::vector<char*> argv;
         if (!interpreter.empty()) { 
             argv.push_back(const_cast<char*>(interpreter.c_str())); 
-            argv.push_back(const_cast<char*>(scriptPath.c_str())); 
+            argv.push_back(const_cast<char*>(scriptFileName.c_str())); 
         }
-        else argv.push_back(const_cast<char*>(scriptPath.c_str()));
+        else argv.push_back(const_cast<char*>(scriptFileName.c_str()));
         argv.push_back(NULL);
 
         std::vector<char*> envp;
@@ -107,7 +109,7 @@ int CGIHandler::executeCGIProcess(const std::string& scriptPath, const std::stri
         envp.push_back(NULL);
 
         if (!interpreter.empty()) execve(interpreter.c_str(), &argv[0], &envp[0]);
-        else execve(scriptPath.c_str(), &argv[0], &envp[0]);
+        else execve(scriptFileName.c_str(), &argv[0], &envp[0]);
         _exit(127);
     }
 
