@@ -145,7 +145,38 @@ bool Server::handleCGI(int fd, const Request& req, const LocationConfigStruct* b
 		return false;
 	CGIHandler cgiHandler(bestLoc->cgi_extensions, fullPath, config->getServerName(), intToString(config->getPort()));
 	Response resp = cgiHandler.handle(req);
-	this->_client[fd].appendWriteBuffer(resp.genResponseString());
+	
+	//MARIO redirige el error a 500
+	// Si el CGI devolvió error 500 (timeout u otro error), redirigir a la página de error configurada
+	if (resp.getError() == 500)
+	{
+		const std::map<int, std::string>& errorPages = config->getErrorPages();
+		std::string errorPagePath = "/errors/500.html"; // Default
+		
+		// Buscar la página de error 500 en la configuración
+		std::map<int, std::string>::const_iterator it = errorPages.find(500);
+		if (it != errorPages.end())
+		{
+			// Convertir la ruta del config a URL path
+			// zzz/errors/500.html -> /errors/500.html
+			std::string configPath = it->second;
+			size_t rootLen = config->getRoot().length();
+			if (configPath.length() > rootLen && configPath.substr(0, rootLen) == config->getRoot())
+			{
+				errorPagePath = configPath.substr(rootLen);
+				if (errorPagePath.empty() || errorPagePath[0] != '/')
+					errorPagePath = "/" + errorPagePath;
+			}
+		}
+		
+		Response redirectResp;
+		redirectResp.setStatus(302, "Found");
+		redirectResp.setHeader("Location", errorPagePath);
+		redirectResp.setBody("");
+		this->_client[fd].appendWriteBuffer(redirectResp.genResponseString());
+	}
+	else
+		this->_client[fd].appendWriteBuffer(resp.genResponseString());
 	return true;
 }
 

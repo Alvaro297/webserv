@@ -15,6 +15,10 @@ void	Response::setBody(const std::string& body) {
 	_body = body;
 }
 
+void	Response::setError(const int error) {
+	_error = error;
+}
+
 std::string	Response::genResponseString() {
 	std::ostringstream	resp;
 

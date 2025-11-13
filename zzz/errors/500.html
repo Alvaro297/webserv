@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Error 500 - ZZZ</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+        }
+        .error-box {
+            background: white;
+            padding: 60px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { color: #e74c3c; font-size: 5em; margin: 0; }
+        h2 { color: #333; margin: 20px 0; }
+        p { color: #666; margin: 20px 0; }
+        a {
+            display: inline-block;
+            padding: 12px 30px;
+            background: #e74c3c;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            margin-top: 20px;
+            transition: background 0.3s;
+        }
+        a:hover { background: #c0392b; }
+    </style>
+</head>
+<body>
+    <div class="error-box">
+        <h1>500</h1>
+        <h2>Error Interno del Servidor</h2>
+        <p>El servidor encontró un error al procesar tu solicitud.</p>
+        <p><small>Esto puede ocurrir cuando un script CGI excede el tiempo límite.</small></p>
+        <a href="/">Volver al Inicio</a>
+    </div>
+</body>
+</html>

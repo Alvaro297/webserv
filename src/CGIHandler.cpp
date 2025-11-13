@@ -18,6 +18,7 @@ CGIHandler::CGIHandler(const std::map<std::string, std::string>& cgiExts, const 
 Response CGIHandler::buildErrorResponse(int code, const std::string& message) const {
     Response r;
     r.setStatus(code, message);
+    r.setError(code);
     r.setHeader("Content-Type", "text/html");
     std::ostringstream ss;
     ss << "<h2>" << code << " " << message << "</h2>";

@@ -14,8 +14,6 @@ class Response
 		std::string	_body;
 		int			_error;
 
-		void		setError(const int error);
-
 	public:
 		Response();
 		
@@ -23,6 +21,7 @@ class Response
 		void		setStatus(int code, const std::string& msg);
 		void		setHeader(const std::string& key, const std::string& value);
 		void		setBody(const std::string& body);
+		void		setError(const int error);
 
 		const std::string&	getBody() const;
 		int					getError() const;
