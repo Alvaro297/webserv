@@ -23,8 +23,8 @@ class Handler {
 		std::string	buildFilePath(const std::string& rawReq) const;
 		std::string	getMimeType(const std::string& path) const; //Añadido por Mario
 		bool		isAutoindexEnabled(const std::string& requestPath);
-		bool Handler::isMethodAllowed(const std::string& method, const std::string& path) const;
-		const LocationConfigStruct* Handler::findActualLocation(const std::string& path) const;
+		bool 		isMethodAllowed(const std::string& method, const std::string& path) const;
+		const LocationConfigStruct*	findActualLocation(const std::string& path) const;
 
 	public:
 		Handler(const std::string& root, const ServerConfig& conf);
