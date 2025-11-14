@@ -137,6 +137,14 @@ void ServerConfig::setServerName(const std::string& value) { server_name = value
 void ServerConfig::setRoot(const std::string& value) { root = value; }
 void ServerConfig::setIpv(const int value) { ipv = value; }
 void ServerConfig::setIndex(const std::vector<std::string> value) { index = value; }
+void ServerConfig::setLocations(const std::vector<LocationConfigStruct>& locs) { locations = locs; }
+void ServerConfig::setErrorPages(const std::map<int, std::string>& pages) { error_pages = pages; }
+void ServerConfig::setClientMaxBodySize(const size_t size) { client_max_body_size = size; }
+void ServerConfig::setAutoindex(const bool value) { autoindex = value; }
+void ServerConfig::setUploadEnable(const bool value) { upload_enable = value; }
+void ServerConfig::setUploadStore(const std::string& store) { upload_store = store; }
+void ServerConfig::setCgiExtensions(const std::map<std::string, std::string>& exts) { cgi_extensions = exts; }
+void ServerConfig::setCgiEnable(const bool value) { cgi_enable = value; }
 
 void ServerConfig::printConfig() const
 {
