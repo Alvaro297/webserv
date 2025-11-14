@@ -50,18 +50,13 @@ std::string	Handler::buildFilePath(const std::string& rawReq) const {
 //Save the content of _multiBody in different files.
 bool	saveMultipartFile(std::string part, const std::string& uploadFolder) {
 	try {
+		std::cout << "[DEBUG] part: " << part << std::endl;
 		size_t	dispStart = part.find("Content-Disposition:");
 
 		size_t	nameStart = part.find("name=\"", dispStart);
 
-		if (nameStart == std::string::npos) //MARIO
-		{
-			// Not a proper form-data part (could be CRLF/preamble) — ignore it
-			std::ofstream dbg("/tmp/upload_debug.log", std::ios::app);
-			if (dbg.is_open()) dbg << "[DEBUG] Part ignored: no name found\n";
-			return true;
-			// return false;
-		}
+		if (nameStart == std::string::npos) //RFC says parameter "name=" must exist, but the standard behaviour is accept unnamed parts anyway (perfect multipart reqs aren't usual)
+			return true;					// So, we just skip this part
 
 		size_t	nameEnd = part.find("\"", nameStart + 6);
 		std::string	name =part.substr(nameStart + 6, nameEnd - (nameStart + 6));
@@ -88,11 +83,10 @@ bool	saveMultipartFile(std::string part, const std::string& uploadFolder) {
 			content.erase(content.size() - 2); //Remove last "\r\n"
 		
 		std::ofstream out;
-		/////std::string uploadFolder = _conf.getUploadStore(); //MARIO
 		if (uploadFolder.empty())
-			out.open(("uploads/" + fileName).c_str(), std::ios::binary); //MARIO
+			out.open(("uploads/" + fileName).c_str(), std::ios::binary); //Open/create a file with that name in uploads directory.
 		else
-			out.open((uploadFolder + "/" + fileName).c_str(), std::ios::binary); //MARIO
+			out.open((uploadFolder + "/" + fileName).c_str(), std::ios::binary); //Open/create a file with that name in uploads directory.
 		out.write(content.c_str(), content.size()); //Use write instead of <<, because binaries can have a "\0" inside the text.
 		out.close();
 	}
@@ -110,29 +104,30 @@ Response Handler::handleMULT(const Request& req) {
 	try {
 		std::vector<std::string> mBody = req.getMultiBody();
 
-		//MARIO
 		// Determine upload folder using longest location match
 		std::string uploadFolder = this->_conf.getUploadStore();
+		
 		std::string reqPath = req.getPath();
-		// If a location-specific upload store exists, prefer it (search locations)
-		{
-			size_t bestLen = 0;
-			const std::vector<LocationConfigStruct>& locs = this->_conf.getLocations();
-			for (size_t i = 0; i < locs.size(); ++i) {
-				const LocationConfigStruct& loc = locs[i];
-				if (!loc.upload_store.empty() && reqPath.compare(0, loc.path.length(), loc.path) == 0 && loc.path.length() > bestLen) {
-					bestLen = loc.path.length();
-					uploadFolder = loc.upload_store;
-				}
+		size_t bestLen = 0;
+		const std::vector<LocationConfigStruct>& locs = this->_conf.getLocations();
+		for (size_t i = 0; i < locs.size(); ++i) { // If a location-specific upload store exists, use it
+			const LocationConfigStruct& loc = locs[i];
+			if (!loc.upload_store.empty() && reqPath.compare(0, loc.path.length(), loc.path) == 0 && loc.path.length() > bestLen) {
+				bestLen = loc.path.length();
+				uploadFolder = loc.upload_store;
 			}
 		}
-		//MARIO
 
 		for (size_t i = 0; i < mBody.size(); ++i) {
 			if (!saveMultipartFile(mBody[i], uploadFolder))
 				throw std::runtime_error("Bad multipart");
 		}
 		FillResp::set200(res, req, "<h1>File uploaded succesfully</h1>");
+		/* if (!success.html)  //Esta parte debe lanzar el HTML de Mario (si existe) cuando lo tenga preparado
+			FillResp::set200(res, req, "<h1>File uploaded succesfully</h1>");
+		else
+			FillResp::set200(res, req, successHtml); */
+
 	}
 	catch (const std::exception& e) {
 		FillResp::set500(res, req);
@@ -208,7 +203,7 @@ Response	Handler::handleGET(Request& req)
 	try {
 		struct stat s;
 		std::string path = buildFilePath(req.getPath());
-		if (path.empty()) //Maybe 404 here instead????
+		if (path.empty())
 			path = _root + req.getPath();
 		req.setFinalPath(path);
 		
@@ -218,20 +213,17 @@ Response	Handler::handleGET(Request& req)
 		}
 
 		if (S_ISDIR(s.st_mode)) {
-			// Check if autoindex is enabled for this location
-			if (isAutoindexEnabled(req.getPath())) {
+			if (isAutoindexEnabled(req.getPath())) { // Check if autoindex is enabled for this location
 				std::string autoindexHtml = generateAutoindexHtml(path, req.getPath());
-				res.setStatus(200, "OK");
-				res.setHeader("Content-Type", "text/html");
-				res.setBody(autoindexHtml);
+				FillResp::set200(res, req, autoindexHtml);
 				return res;
-			} else {
+			}
+			else {
 				FillResp::set403(res, req);
 				return res;
 			}
 		}
 
-		// Handle regular files
 		std::ifstream file(path.c_str(), std::ios::in | std::ios::binary);
 		if (!file.is_open()) {
 			FillResp::set403(res, req);
@@ -265,7 +257,12 @@ Response	Handler::handleRequest(const std::string& rawReq) {
 		return res;
 	}
 
-	if (req.getMethod() == "GET") //---->>En cada metodo mirar si lo permite el webserv.conf para esa location. Miro donde estoy en el path de la cabecera http (usando tambien get_locations de serverconfig.hpp que me devuelve el vector de LocationConfigStruct)
+	if (!isMethodAllowed(req.getMethod(), req.getPath())){
+		FillResp::set405(res, req);
+		return res;
+	}
+
+	if (req.getMethod() == "GET")
 			return handleGET(req);
 	else if (req.getMethod() == "POST") {
 		if (!(req.getBound()).empty()) //POST can have _multiBody, so if _bound is setted, use handleMULT() instead of handlePOST()
@@ -278,4 +275,41 @@ Response	Handler::handleRequest(const std::string& rawReq) {
 		FillResp::set405(res, req);
 		return res;
 	}
+}
+
+// Ensure that the method of the request is allowed by the location in which we are
+bool Handler::isMethodAllowed(const std::string& method, const std::string& path) const {
+	const LocationConfigStruct* loc = findActualLocation(path);
+	if (!loc)
+		return true; //If there is no location, we accept every METHOD
+	
+	const std::vector<std::string>& allowed = loc->methods;
+	if (allowed.empty())
+		return true; //If the location doesn't have rules, we accept every METHOD
+
+	for (size_t i = 0; i < allowed.size(); ++i) {
+		if (allowed[i] == method)
+			return true;
+	}
+
+	return false;
+}
+
+// Find the .conf location in which we are
+const LocationConfigStruct* Handler::findActualLocation(const std::string& reqPath) const {
+	const std::vector<LocationConfigStruct>& locations = _conf.getLocations(); //Get locations vector
+
+	const LocationConfigStruct* bestMatch = NULL;
+
+	size_t bestLen = 0;
+
+	for (size_t i = 0; i < locations.size(); ++i) { //Check, in every location, for the most similar path
+		const std::string& locPath = locations[i].path;
+		if (reqPath.find(locPath) == 0 && locPath.size() > bestLen) { //Check, not only for a coincidence but, for the biggest length (the one that has most in common)
+			bestMatch = &locations[i];
+			bestLen = locPath.size();
+		}
+	}
+
+	return bestMatch;
 }

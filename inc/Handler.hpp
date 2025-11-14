@@ -21,7 +21,7 @@ class Handler {
 		Response	handleMULT(const Request& req);
 
 		std::string	buildFilePath(const std::string& rawReq) const;
-		std::string	getMimeType(const std::string& path) const; //Añadido por Mario
+		std::string	getMimeType(const std::string& path) const;
 		bool		isAutoindexEnabled(const std::string& requestPath);
 		bool 		isMethodAllowed(const std::string& method, const std::string& path) const;
 		const LocationConfigStruct*	findActualLocation(const std::string& path) const;

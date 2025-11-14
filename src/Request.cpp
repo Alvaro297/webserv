@@ -43,24 +43,22 @@ bool	Request::parseRequestValidity(const std::string& rawReq) {
 	else
 		_contentLength = 0;
 
-	//From the empty line must be the _body (if exists). We want to read only the _coontentLength size, for security reasons only.
+	//From the empty line must be the _body (if exists). We want to read only the _contentLength size, for security reasons only.
 	if (_contentLength > 0) {
 		_body.resize(_contentLength);
 		stream.read(&_body[0], _contentLength);
 	}
 
-	// If this is multipart, parse parts now that body is available //////MARIO
+	// If this is multipart, parse parts now that body is available
 	std::map<std::string, std::string>::iterator itBound = _headers.find("Content-Type");
 	if (itBound != _headers.end()) {
 		std::string val = itBound->second;
 		if (val.find("multipart/form-data") != std::string::npos) {
 			if (!parseMultipart(val)) {
-				std::ofstream dbg("/tmp/upload_debug.log", std::ios::app);
-				if (dbg.is_open()) dbg << "[DEBUG parseRequestValidity] parseMultipart failed\n";
 				return false;
 			}
 		}
-	}/////MARIO
+	}
 
 	return true;
 }
@@ -174,12 +172,6 @@ bool	Request::parseHeaderLine(std::string& line) {
 
 	_headers[key] = value;
 
-	//Check if it is a multipart header and parse it in such the case (parseMultipart parses header and body at once).
-	// if (key == "Content-Type")
-	// 	if (value.find("multipart/form-data") != std::string::npos)
-	// 		if (!parseMultipart(value))
-	// 			return false;
-	// MARIO. 
 	return true;
 }
 
