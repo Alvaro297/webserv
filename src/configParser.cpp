@@ -1,15 +1,5 @@
 #include "../inc/configParser.hpp"
 #include "../inc/ServerConfig.hpp"
-#include <fstream>
-#include <sstream>
-#include <cctype>
-#include <iostream>
-#include <cstdlib>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <errno.h>
-#include <string.h>
-#include <cstring>
 
 ConfigParser::ConfigParser() {}
 ConfigParser::ConfigParser(const ConfigParser& other) { (void)other; }
@@ -19,10 +9,13 @@ ConfigParser::~ConfigParser() {}
 std::string ConfigParser::s_lastError;
 const std::string& ConfigParser::LastError() { return s_lastError; }
 
+
+
 // Helper: trim spaces from both ends
 static std::string trim_str(const std::string& s) {
 	size_t a = s.find_first_not_of(" \t\r\n");
-	if (a == std::string::npos) return std::string();
+	if (a == std::string::npos) 
+		return std::string();
 	size_t b = s.find_last_not_of(" \t\r\n");
 	return s.substr(a, b - a + 1);
 }
@@ -70,10 +63,17 @@ static bool make_dirs(const std::string& path) {
 	return true;
 }
 
-
+// Read entire file into a string
 bool ConfigParser::readFile(const std::string& path, std::string& out) {
+	
+	// Open file
 	std::ifstream ifs(path.c_str(), std::ios::in | std::ios::binary);
-	if (!ifs) { s_lastError = "Could not open file: " + path; return false; }
+	if (!ifs) { 
+		s_lastError = "Could not open file: " + path; 
+		return false; 
+	}
+
+	// Read file content and store in output string
 	std::ostringstream oss;
 	oss << ifs.rdbuf();
 	out = oss.str();
@@ -84,7 +84,9 @@ bool ConfigParser::readFile(const std::string& path, std::string& out) {
 bool ConfigParser::fillLocation(const std::string& block, LocationConfigStruct& location) {
 	std::istringstream iss(block);
 	std::string line;
+	// Parse line by line
 	while (std::getline(iss, line)) {
+		// Clean line
 		line = trim_str(line);
 		if (line.empty() || line[0] == '#') continue;
 		if (!line.empty() && line[line.length() - 1] == ';') line.erase(line.size() - 1);
@@ -93,23 +95,29 @@ bool ConfigParser::fillLocation(const std::string& block, LocationConfigStruct& 
 		std::string key;
 		ls >> key;
 
+		// Parse known directives
 		if (key == "methods") {
 			location.methods.clear();
 			std::string m;
 			while (ls >> m) location.methods.push_back(m);
 		} else if (key == "client_max_body_size") {
-			std::string val; ls >> val; location.client_max_body_size = parse_size(val);
+			std::string val; ls >> val; 
+			location.client_max_body_size = parse_size(val);
 		} else if (key == "root") {
 			ls >> location.root;
 		} else if (key == "autoindex") {
-			std::string val; ls >> val; location.autoindex = (val == "on" || val == "true");
+			std::string val; ls >> val; 
+			location.autoindex = (val == "on" || val == "true");
 		} else if (key == "index") {
-			location.index.clear(); std::string idx; while (ls >> idx) location.index.push_back(idx);
+			location.index.clear(); std::string idx; 
+			while (ls >> idx) 
+				location.index.push_back(idx);
 		} else if (key == "upload_enable") {
-			std::string val; ls >> val; location.upload_enable = (val == "on" || val == "true");
+			std::string val; 
+			ls >> val; 
+			location.upload_enable = (val == "on" || val == "true");
 		} else if (key == "upload_store") {
 			ls >> location.upload_store;
-			// Normalize remove trailing slash
 			if (!location.upload_store.empty() && location.upload_store.size() > 1 && location.upload_store[location.upload_store.size() - 1] == '/')
 				location.upload_store.erase(location.upload_store.size() - 1);
 			if (location.upload_store.find("..") != std::string::npos) {
@@ -121,23 +129,20 @@ bool ConfigParser::fillLocation(const std::string& block, LocationConfigStruct& 
 			}
 		} else if (key == "cgi_extension") {
 			std::string ext, bin; ls >> ext >> bin; if (!ext.empty()) location.cgi_extensions[ext] = bin;
-		} else if (key == "cgi_ext") { //MARIO
-			// Support legacy short directive: can be a list of extensions or pairs (ext bin)
+		} else if (key == "cgi_ext") {
 			std::vector<std::string> tokens;
 			std::string tkn;
 			while (ls >> tkn) tokens.push_back(tkn);
 			for (size_t i = 0; i < tokens.size(); ) {
 				std::string ext = tokens[i];
-				// If next token looks like an absolute path (starts with '/') treat it as binary
 				if (i + 1 < tokens.size() && !tokens[i+1].empty() && tokens[i+1][0] == '/') {
 					location.cgi_extensions[ext] = tokens[i+1];
 					i += 2;
 				} else {
-					// Map extension to empty binary (caller must set interpreter globally or in server)
 					location.cgi_extensions[ext] = "";
 					i += 1;
 				}
-			} //MARIO
+			}
 		} else if (key == "cgi_enable") {
 			std::string val; ls >> val; location.cgi_enable = (val == "on" || val == "true");
 		} else if (key == "return") {
@@ -147,26 +152,26 @@ bool ConfigParser::fillLocation(const std::string& block, LocationConfigStruct& 
 	return true;
 }
 
+// Fill ServerConfigStruct from server block text
 bool ConfigParser::fillServer(const std::string& block, ServerConfigStruct& server) {
 	std::istringstream iss(block);
 	std::string line;
-	// position to continue searching for location markers inside this block
 	size_t searchPos = 0;
 
+	// Parse line by line
 	while (std::getline(iss, line)) {
+		// Clean line
 		line = trim_str(line);
 		if (line.empty() || line[0] == '#')
 			continue;
-
-		// Quitar punto y coma final si existe
-		if (!line.empty() && line[line.size() - 1] == ';')
+		if (line[line.size() - 1] == ';')
 			line.erase(line.size() - 1, 1);
 
 		std::istringstream lineStream(line);
 		std::string key;
 		lineStream >> key;
 
-		// --- Claves simples ---
+		// Simple key-value pairs
 		if (key == "root") lineStream >> server.root;
 		else if (key == "server_name") lineStream >> server.server_name;
 		else if (key == "host") lineStream >> server.host;
@@ -187,40 +192,44 @@ bool ConfigParser::fillServer(const std::string& block, ServerConfigStruct& serv
 			if (!path.empty())
 				server.error_pages[code] = path;
 		}
-		// --- Clave location ---
+
+		// key location { ... }
 		else if (key == "location") {
 			std::string path;
 			lineStream >> path;
 
+			// Find the full location block
 			std::string marker = "location " + path;
 			size_t pos = block.find(marker, searchPos);
-			// Ensure we don't match prefixes: e.g. 'location /' must not match 'location /siege'
+			// Ensure we found a valid location directive (not part of another word)
 			while (pos != std::string::npos) {
 				size_t afterPos = pos + marker.length();
+				// check next character
 				if (afterPos < block.length()) {
 					char nextChar = block[afterPos];
-					// acceptable separators after the path: whitespace or '{'
 					if (nextChar == ' ' || nextChar == '\t' || nextChar == '\r' || nextChar == '\n' || nextChar == '{')
 						break; // valid match
-				} else {
-					// marker is at end of block (unlikely), treat as match
-					break;
-				}
+				} else 
+					break; // marker is at end of block (unlikely), treat as match
 				pos = block.find(marker, pos + 1);
 			}
+			// If found, extract inner block
 			if (pos != std::string::npos) {
 				size_t bracePos = block.find('{', pos);
+				// Find matching closing brace
 				if (bracePos != std::string::npos) {
 					size_t innerStart = bracePos + 1;
 					size_t innerEnd = innerStart;
 					int braceCount = 1;
 
+					// Find the matching closing brace '}'
 					while (innerEnd < block.size() && braceCount > 0) {
 						if (block[innerEnd] == '{') braceCount++;
 						else if (block[innerEnd] == '}') braceCount--;
 						innerEnd++;
 					}
 
+					// If braces matched, extract location block
 					if (braceCount == 0) {
 						std::string inner = block.substr(innerStart, innerEnd - innerStart - 1);
 						LocationConfigStruct loc;
@@ -232,11 +241,10 @@ bool ConfigParser::fillServer(const std::string& block, ServerConfigStruct& serv
 						}
 						server.locations.push_back(loc);
 						searchPos = innerEnd;
-						// Advance the input stream position to skip lines inside the parsed location
-						// so they are not interpreted as top-level server directives.
 						iss.clear();
+						// Move stream position to continue after this location block
 						iss.seekg((std::streampos)innerEnd);
-						continue;
+						continue ;
 					}
 				}
 			}
@@ -245,10 +253,12 @@ bool ConfigParser::fillServer(const std::string& block, ServerConfigStruct& serv
 	return true;
 }
 
+// Search for server blocks in the configuration text
 bool ConfigParser::searchServers(const std::string& text,
 							std::vector<ServerConfigStruct>& outServers) {
 	
 	size_t pos = 0;
+	// Search for 'server' keyword
 	while ((pos = text.find("server", pos)) != std::string::npos) {
 
 		// Check if 'server' is not part of another word
@@ -275,14 +285,10 @@ bool ConfigParser::searchServers(const std::string& text,
 				blockEnd++;
 			}
 			
+			// If braces matched, extract server block
 			if (braceCount == 0) {
 				std::string serverBlock = text.substr(blockStart, blockEnd - blockStart - 1);
 				ServerConfigStruct srv;
-				srv.port = 8080;
-				srv.host = "127.0.0.1";
-				srv.root = "/var/www/html";
-				srv.server_name = "";
-				srv.ipv = 4;
 				if (fillServer(serverBlock, srv))
 					outServers.push_back(srv);
 			}
@@ -304,14 +310,17 @@ std::vector<ServerConfig> ConfigParser::RunParser(const char * config_file)
 		std::vector<ServerConfig> servers;
 		std::string text;
 
+		// Read the configuration file
 		if (!readFile((config_file), text)){
 			std::cerr << "Error: " << LastError() << std::endl;
-			return std::vector<ServerConfig>(); // Return empty vector on error
+			return std::vector<ServerConfig>();
 		}
+		// Search for server blocks
 		if (!searchServers(text, serversParsing)) {
 			std::cerr << "Error: " << LastError() << std::endl;
-			return std::vector<ServerConfig>(); // Return empty vector on error
+			return std::vector<ServerConfig>();
 		}
+		// Convert to ServerConfig objects
 		for (size_t i = 0; i < serversParsing.size(); i++)
 			servers.push_back(ServerConfig(serversParsing[i], i));
 		return servers;
@@ -319,6 +328,6 @@ std::vector<ServerConfig> ConfigParser::RunParser(const char * config_file)
 	catch(const std::exception& e)
 	{
 		std::cerr << e.what() << '\n';
-		return std::vector<ServerConfig>(); // Return empty vector on error
+		return std::vector<ServerConfig>();
 	}
 }

@@ -1,16 +1,5 @@
 #include "../inc/CGIHandler.hpp"
 
-#include <unistd.h>
-#include <sys/wait.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <signal.h>
-#include <ctime>
-#include <cstring>
-#include <algorithm>
-#include <cctype>
-#include <sstream>
-
 CGIHandler::CGIHandler(const std::map<std::string, std::string>& cgiExts, const std::string& root,
                        const std::string& serverName, const std::string& serverPort)
     : _cgiExts(cgiExts), _root(root), _serverName(serverName), _serverPort(serverPort) {}
