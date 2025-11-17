@@ -193,6 +193,7 @@ Response CGIHandler::handle(const Request& req) {
     std::string matchedScriptFs;
     size_t searchPos = path.size();
 
+	// Traverse backwards to find the longest matching script file
     while (searchPos > 0) {
         std::string candidateFs = _root + path.substr(0, searchPos);
         
