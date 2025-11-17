@@ -51,10 +51,16 @@ class FillResp
 		}
 
 		static void	set505(Response& res, const Request& req) {
-			res.setStatus(505, "HTTP Version Not Supported");
-			res.setHeader("Content-Type", req.getType());
-			res.setBody("<h1>505 Version Not Supported</h1>");
-		}
-};
+		res.setStatus(505, "HTTP Version Not Supported");
+		res.setHeader("Content-Type", req.getType());
+		res.setBody("<h1>505 Version Not Supported</h1>");
+	}
 
+	static void	set303(Response& res, const std::string& location) {
+		res.setStatus(303, "See Other");
+		res.setHeader("Location", location);
+		res.setHeader("Content-Type", "text/html");
+		res.setBody("<html><body><h1>303 See Other</h1><p>Redirecting to <a href=\"" + location + "\">" + location + "</a></p></body></html>");
+	}
+};
 #endif
