@@ -136,7 +136,7 @@ bool Server::handleRedirection(int fd, const LocationConfigStruct* bestLoc)
 		
 	Response r;
 	int code = bestLoc->return_code;
-	std::string msg = (code == 301) ? "Moved Permanently" : (code == 302) ? "Found" : "Redirect";
+	std::string msg = (code == 301) ? "Moved Permanently" : (code == 302) ? "Found" : (code == 303) ? "See Other" : "Redirect";
 	r.setStatus(code, msg);
 	std::string locurl = bestLoc->return_url;
 	if (locurl.empty()) locurl = "/";
