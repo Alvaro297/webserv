@@ -234,7 +234,7 @@ Response CGIHandler::handle(const Request& req) {
                                    buildEnv(req, matchedScriptFs, pathInfo), 
                                    req.getBody(), output);
     if (status == -1)
-        return buildErrorResponse(500, "Internal Server Error");
+        return buildErrorResponse(504, "Gateway Time");
 
     // Parse CGI output (headers and body)
     size_t split = output.find("\r\n\r\n");

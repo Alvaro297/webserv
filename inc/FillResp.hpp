@@ -57,6 +57,12 @@ class FillResp
 			res.setBody("<h1>500 Internal Server Error</h1>");
 		}
 
+		static void	set504(Response& res, const Request& req) {
+			res.setStatus(504, "Gateway Time");
+			res.setHeader("Content-Type", req.getType());
+			res.setBody("<h1>504 Gateway Time</h1>");
+		}
+
 		static void	set505(Response& res, const Request& req) {
 			res.setStatus(505, "HTTP Version Not Supported");
 			res.setHeader("Content-Type", req.getType());

@@ -293,7 +293,6 @@ Response	Handler::handleRequest(const std::string& rawReq) {
 		FillResp::set405(res, req);
 		return res;
 	}
-
 	if (req.getMethod() == "GET")
 			return handleGET(req);
 	else if (req.getMethod() == "POST") {

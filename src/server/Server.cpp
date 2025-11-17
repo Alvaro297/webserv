@@ -97,14 +97,6 @@ ServerConfig* Server::extractFullPath(std::string fullBuffer)
 		return &it->second.servers[0];
 	
 	// If not found, try with 0.0.0.0 (fallback for localhost/127.0.0.1)
-	// Esto es si lo estas ejecutando en wsl sino comentarlo
-	if (host == "127.0.0.1")
-	{
-		std::string fallbackHost = "0.0.0.0:" + ss.str();
-		it = _listeners.find(fallbackHost);
-		if (it != _listeners.end() && !it->second.servers.empty())
-			return &it->second.servers[0];
-	}
 	
 	return NULL;
 }
@@ -161,19 +153,14 @@ bool Server::handleCGI(int fd, const Request& req, const LocationConfigStruct* b
 	CGIHandler cgiHandler(bestLoc->cgi_extensions, fullPath, config->getServerName(), intToString(config->getPort()));
 	Response resp = cgiHandler.handle(req);
 	
-	//MARIO redirige el error a 500
-	// Si el CGI devolvió error 500 (timeout u otro error), redirigir a la página de error configurada
 	if (resp.getError() == 500)
 	{
 		const std::map<int, std::string>& errorPages = config->getErrorPages();
-		std::string errorPagePath = "/errors/500.html"; // Default
+		std::string errorPagePath = "/errors/500.html";
 		
-		// Buscar la página de error 500 en la configuración
 		std::map<int, std::string>::const_iterator it = errorPages.find(500);
 		if (it != errorPages.end())
 		{
-			// Convertir la ruta del config a URL path
-			// zzz/errors/500.html -> /errors/500.html
 			std::string configPath = it->second;
 			size_t rootLen = config->getRoot().length();
 			if (configPath.length() > rootLen && configPath.substr(0, rootLen) == config->getRoot())
@@ -246,7 +233,6 @@ void Server::createListener(const ServerConfig& config, const std::string& fullh
 		return;
 	}
 	
-	// Permitir reutilizar el puerto inmediatamente después de cerrar el servidor
 	int opt = 1;
 	if (setsockopt(fdSocket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
 	{
@@ -407,7 +393,7 @@ void Server::readClient(int fds)
 
 void Server::closeClient(int fd, const std::string& reason)
 {
-	std::cout << "[INFO] Cerrando cliente fd=" << fd << " - Motivo: " << reason << std::endl;
+	std::cout << "Closing client: " << fd << " reason: " << reason << std::endl;
 	close(fd);
 	this->_client.erase(fd);
 }
