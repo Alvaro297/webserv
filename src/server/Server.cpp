@@ -197,11 +197,9 @@ bool Server::handleCGI(int fd, const Request& req, const LocationConfigStruct* b
 
 void Server::processRequest(int fd, const std::string& fullBuffer)
 {
-	std::cout << "[DEBUG] processRequest called with fd=" << fd << std::endl;
 	std::string fullPath;
 	Request req = Request();
 	ServerConfig* config = extractFullPath(fullBuffer);
-	std::cout << "[DEBUG] extractFullPath returned: " << (config ? "valid config" : "NULL") << std::endl;
 	if (config)
 	{
 		fullPath = config->getRoot();
@@ -329,7 +327,6 @@ static bool lineFinish(std::string line)
 	}
 	if (line.find(eof) != std::string::npos)
 	{
-		std::cout << "[DEBUG] Found eof in line" << std::endl;
 		if (typeMethod == "GET" || (typeMethod == "DELETE"
 				&& posOfLength == std::string::npos))
 			return true;
