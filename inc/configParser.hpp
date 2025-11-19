@@ -1,13 +1,15 @@
 #ifndef CONFIGPARSER_HPP
 #define CONFIGPARSER_HPP
 
-#include <string>
+#include <fstream>
+#include <sstream>
+#include <sys/stat.h>
+#include <string.h>
 #include <vector>
 #include <map>
-#include <utility>
+#include <string>
 
 class ServerConfig;
-
 
 struct LocationConfigStruct {
 	std::string path;                      // location path (e.g. /static)

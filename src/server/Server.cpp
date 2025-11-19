@@ -97,14 +97,6 @@ ServerConfig* Server::extractFullPath(std::string fullBuffer)
 		return &it->second.servers[0];
 	
 	// If not found, try with 0.0.0.0 (fallback for localhost/127.0.0.1)
-	// Esto es si lo estas ejecutando en wsl sino comentarlo
-	if (host == "127.0.0.1")
-	{
-		std::string fallbackHost = "0.0.0.0:" + ss.str();
-		it = _listeners.find(fallbackHost);
-		if (it != _listeners.end() && !it->second.servers.empty())
-			return &it->second.servers[0];
-	}
 	
 	return NULL;
 }
@@ -136,7 +128,7 @@ bool Server::handleRedirection(int fd, const LocationConfigStruct* bestLoc)
 		
 	Response r;
 	int code = bestLoc->return_code;
-	std::string msg = (code == 301) ? "Moved Permanently" : (code == 302) ? "Found" : "Redirect";
+	std::string msg = (code == 301) ? "Moved Permanently" : (code == 302) ? "Found" : (code == 303) ? "See Other" : "Redirect";
 	r.setStatus(code, msg);
 	std::string locurl = bestLoc->return_url;
 	if (locurl.empty()) locurl = "/";
@@ -161,19 +153,14 @@ bool Server::handleCGI(int fd, const Request& req, const LocationConfigStruct* b
 	CGIHandler cgiHandler(bestLoc->cgi_extensions, fullPath, config->getServerName(), intToString(config->getPort()));
 	Response resp = cgiHandler.handle(req);
 	
-	//MARIO redirige el error a 500
-	// Si el CGI devolvió error 500 (timeout u otro error), redirigir a la página de error configurada
 	if (resp.getError() == 500)
 	{
 		const std::map<int, std::string>& errorPages = config->getErrorPages();
-		std::string errorPagePath = "/errors/500.html"; // Default
+		std::string errorPagePath = "/errors/500.html";
 		
-		// Buscar la página de error 500 en la configuración
 		std::map<int, std::string>::const_iterator it = errorPages.find(500);
 		if (it != errorPages.end())
 		{
-			// Convertir la ruta del config a URL path
-			// zzz/errors/500.html -> /errors/500.html
 			std::string configPath = it->second;
 			size_t rootLen = config->getRoot().length();
 			if (configPath.length() > rootLen && configPath.substr(0, rootLen) == config->getRoot())
@@ -197,11 +184,9 @@ bool Server::handleCGI(int fd, const Request& req, const LocationConfigStruct* b
 
 void Server::processRequest(int fd, const std::string& fullBuffer)
 {
-	std::cout << "[DEBUG] processRequest called with fd=" << fd << std::endl;
 	std::string fullPath;
 	Request req = Request();
 	ServerConfig* config = extractFullPath(fullBuffer);
-	std::cout << "[DEBUG] extractFullPath returned: " << (config ? "valid config" : "NULL") << std::endl;
 	if (config)
 	{
 		fullPath = config->getRoot();
@@ -248,7 +233,6 @@ void Server::createListener(const ServerConfig& config, const std::string& fullh
 		return;
 	}
 	
-	// Permitir reutilizar el puerto inmediatamente después de cerrar el servidor
 	int opt = 1;
 	if (setsockopt(fdSocket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
 	{
@@ -329,7 +313,6 @@ static bool lineFinish(std::string line)
 	}
 	if (line.find(eof) != std::string::npos)
 	{
-		std::cout << "[DEBUG] Found eof in line" << std::endl;
 		if (typeMethod == "GET" || (typeMethod == "DELETE"
 				&& posOfLength == std::string::npos))
 			return true;
@@ -410,7 +393,7 @@ void Server::readClient(int fds)
 
 void Server::closeClient(int fd, const std::string& reason)
 {
-	std::cout << "[INFO] Cerrando cliente fd=" << fd << " - Motivo: " << reason << std::endl;
+	std::cout << "Closing client: " << fd << " reason: " << reason << std::endl;
 	close(fd);
 	this->_client.erase(fd);
 }

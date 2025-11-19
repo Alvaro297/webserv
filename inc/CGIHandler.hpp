@@ -1,11 +1,13 @@
 #ifndef CGIHANDLER_HPP
 #define CGIHANDLER_HPP
 
-#include <string>
-#include <vector>
-#include <map>
 #include "Request.hpp"
 #include "Response.hpp"
+
+#include <sys/wait.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <algorithm>
 
 class CGIHandler {
 public:

@@ -9,15 +9,22 @@ class FillResp
 {
 	public:
 		static void	set200(Response& res, const Request& req, const std::string& answer) {
-		res.setStatus(200, "OK");
-		res.setHeader("Content-Type", req.getType());
-		res.setBody(answer);
+			res.setStatus(200, "OK");
+			res.setHeader("Content-Type", req.getType());
+			res.setBody(answer);
 		}
 
 		static void	set201(Response& res, const Request& req) {
 			res.setStatus(201, "Created");
 			res.setHeader("Content-Type", req.getType());
 			res.setBody("<h1>201 Created</h1>");
+		}
+		
+		static void	set303(Response& res, const std::string& location) {
+			res.setStatus(303, "See Other");
+			res.setHeader("Location", location);
+			res.setHeader("Content-Type", "text/html");
+			res.setBody("<html><body><h1>303 See Other</h1><p>Redirecting to <a href=\"" + location + "\">" + location + "</a></p></body></html>");
 		}
 
 		static void	set400(Response& res, const Request& req) {
@@ -50,11 +57,17 @@ class FillResp
 			res.setBody("<h1>500 Internal Server Error</h1>");
 		}
 
+		static void	set504(Response& res, const Request& req) {
+			res.setStatus(504, "Gateway Time");
+			res.setHeader("Content-Type", req.getType());
+			res.setBody("<h1>504 Gateway Time</h1>");
+		}
+
 		static void	set505(Response& res, const Request& req) {
 			res.setStatus(505, "HTTP Version Not Supported");
 			res.setHeader("Content-Type", req.getType());
 			res.setBody("<h1>505 Version Not Supported</h1>");
 		}
-};
 
+};
 #endif

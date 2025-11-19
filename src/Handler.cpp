@@ -50,7 +50,6 @@ std::string	Handler::buildFilePath(const std::string& rawReq) const {
 //Save the content of _multiBody in different files.
 bool	saveMultipartFile(std::string part, const std::string& uploadFolder) {
 	try {
-		std::cout << "[DEBUG] part: " << part << std::endl;
 		size_t	dispStart = part.find("Content-Disposition:");
 
 		size_t	nameStart = part.find("name=\"", dispStart);
@@ -68,12 +67,8 @@ bool	saveMultipartFile(std::string part, const std::string& uploadFolder) {
 
 		size_t	filenameStart = part.find("filename=\"", dispStart);
 		
-		if (filenameStart == std::string::npos) { //Not a file, i don't think we need to handle this kind of forms (without archive)
-			/* std::string nameValue = part.substr(contStart);
-			if (nameValue.size() >= 2 && nameValue[nameValue.size() - 2] == '\r')
-				nameValue.erase(nameValue.size() - 2); */
+		if (filenameStart == std::string::npos) //Not a file, so continue with the next part
 			return true;
-		}
 
 		size_t	filenameEnd = part.find("\"", filenameStart + 10);
 		std::string	fileName = part.substr(filenameStart + 10, filenameEnd - (filenameStart + 10));
@@ -123,11 +118,18 @@ Response Handler::handleMULT(const Request& req) {
 				throw std::runtime_error("Bad multipart");
 		}
 		FillResp::set200(res, req, "<h1>File uploaded succesfully</h1>");
-		/* if (!success.html)  //Esta parte debe lanzar el HTML de Mario (si existe) cuando lo tenga preparado
-			FillResp::set200(res, req, "<h1>File uploaded succesfully</h1>");
-		else
-			FillResp::set200(res, req, successHtml); */
 
+		bool hasRedirect = false;	//Check if there's a configured redirect for upload success
+		for (size_t i = 0; i < locs.size(); ++i) {
+			if (locs[i].path == "/upload-success" && locs[i].return_code != 0) {
+				hasRedirect = true;
+				break ;
+			}
+		}
+		if (hasRedirect)
+			FillResp::set303(res, "/upload-success"); //Set redirect response if there's a config redirect
+		else
+			FillResp::set200(res, req, "<h1>File uploaded succesfully</h1>");
 	}
 	catch (const std::exception& e) {
 		FillResp::set500(res, req);
@@ -195,50 +197,80 @@ Response	Handler::handleDELETE(Request& req) {
 	return res;
 }
 
-// GET Method. Check availability of the file: generating its path, ensuring that path exists, is a directory, and is openable.
-//  Then, using file content as _body, returns the generated response.
+// GET Method. Check availability of the file: generating its path, ensuring that path exists, is a directory/file, and is openable.
+//  In directory case, we have to look for the index.html or generate the autoindex (if allowed).
+//   Then, using file content as _body, returns the generated response.
 Response	Handler::handleGET(Request& req)
 {
 	Response res;
 	try {
-		struct stat s;
 		std::string path = buildFilePath(req.getPath());
 		if (path.empty())
-			path = _root + req.getPath();
-		req.setFinalPath(path);
+		path = _root + req.getPath();
 		
+		struct stat s;
 		if (stat(path.c_str(), &s) != 0) {
 			FillResp::set404(res, req);
 			return res;
 		}
-
 		if (S_ISDIR(s.st_mode)) {
 			if (isAutoindexEnabled(req.getPath())) { // Check if autoindex is enabled for this location
 				std::string autoindexHtml = generateAutoindexHtml(path, req.getPath());
 				FillResp::set200(res, req, autoindexHtml);
 				return res;
 			}
-			else {
+			std::string	indexPath = findIndexFile(path);	//If loc doesn't use autoindex, we look for the path of an internal index.
+			if (indexPath.empty()) {						//Error, if there is no index inside
 				FillResp::set403(res, req);
 				return res;
 			}
+			return serveFile(indexPath, req, res);
 		}
-
-		std::ifstream file(path.c_str(), std::ios::in | std::ios::binary);
-		if (!file.is_open()) {
-			FillResp::set403(res, req);
-			return res;
-		}
-
-		std::ostringstream buff;
-		buff << file.rdbuf();
-		file.close();
-
-		FillResp::set200(res, req, buff.str());
+		return serveFile(path, req, res);
 	}
 	catch (const std::exception& e) {
 		FillResp::set500(res, req);
 	}
+	return res;
+}
+
+//Returns a path to the first index inside the directory (if there's one)
+std::string	Handler::findIndexFile(std::string& path) {
+	if (path.substr(0, this->_conf.getRoot().length() + 2) == "./" + this->_conf.getRoot()) //Eliminate the root references, because findActualLocation() doesn't work with them
+		path.erase(0, this->_conf.getRoot().length() + 2);
+
+	const LocationConfigStruct* loc = findActualLocation(path);
+	if (loc) {	//Protect if there was any problem with location finding
+		for (size_t i = 0; i < loc->index.size() ; i++) {
+			std::string candidate = path;
+			if (candidate[candidate.size() - 1] != '/')
+				candidate.push_back('/');
+			candidate += loc->index[i];
+
+			struct stat s;
+			if (stat(candidate.c_str(), &s) == 0 && S_ISREG(s.st_mode)) //Check if exists and is a regular file
+				return candidate;
+		}
+	}
+
+	return "";
+}
+
+// Auxiliar ft for handleGET. Prepare the file, set 200 response and return it.
+Response Handler::serveFile(std::string& path, Request& req, Response& res) {
+	req.setFinalPath(path);
+
+	std::ifstream file(path.c_str(), std::ios::in | std::ios::binary);
+	if (!file.is_open()) {
+		FillResp::set403(res, req);
+		return res;
+	}
+		
+	std::ostringstream buff;
+	buff << file.rdbuf();
+	file.close();
+		
+	FillResp::set200(res, req, buff.str());
 	return res;
 }
 
@@ -261,7 +293,6 @@ Response	Handler::handleRequest(const std::string& rawReq) {
 		FillResp::set405(res, req);
 		return res;
 	}
-
 	if (req.getMethod() == "GET")
 			return handleGET(req);
 	else if (req.getMethod() == "POST") {
@@ -302,7 +333,6 @@ const LocationConfigStruct* Handler::findActualLocation(const std::string& reqPa
 	const LocationConfigStruct* bestMatch = NULL;
 
 	size_t bestLen = 0;
-
 	for (size_t i = 0; i < locations.size(); ++i) { //Check, in every location, for the most similar path
 		const std::string& locPath = locations[i].path;
 		if (reqPath.find(locPath) == 0 && locPath.size() > bestLen) { //Check, not only for a coincidence but, for the biggest length (the one that has most in common)

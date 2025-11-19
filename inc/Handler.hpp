@@ -12,8 +12,9 @@
 
 class Handler {
 	private:
-		std::string		_root;
-		ServerConfig	_conf;
+		std::string				_root;
+		ServerConfig			_conf;
+		LocationConfigStruct* 	_loc;
 		
 		Response	handleGET(Request& req);
 		Response	handlePOST(Request& req);
@@ -25,6 +26,8 @@ class Handler {
 		bool		isAutoindexEnabled(const std::string& requestPath);
 		bool 		isMethodAllowed(const std::string& method, const std::string& path) const;
 		const LocationConfigStruct*	findActualLocation(const std::string& path) const;
+		Response	serveFile(std::string& path, Request& req, Response& res);
+		std::string	findIndexFile(std::string& path);
 
 	public:
 		Handler(const std::string& root, const ServerConfig& conf);

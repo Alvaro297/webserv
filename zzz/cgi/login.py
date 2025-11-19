@@ -2,14 +2,14 @@
 import sys
 import os
 
-# Leer datos POST
+# Read POST data
 content_length = os.environ.get('CONTENT_LENGTH', '0')
 post_data = ''
 
 if content_length and content_length != '0':
     post_data = sys.stdin.read(int(content_length))
 
-# Parsear datos
+# Parse data
 username = ''
 password = ''
 
@@ -24,7 +24,7 @@ if post_data:
             elif key == 'password':
                 password = value
 
-# Generar respuesta HTML
+# Generate HTML response
 html = f"""<!DOCTYPE html>
 <html lang="es">
 <head>
