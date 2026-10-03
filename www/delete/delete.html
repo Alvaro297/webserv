@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head><title>Delete Files</title></head>
+<body>
+<h1>Delete Uploaded Files</h1>
+<p>Enter filename to delete from /uploads/:</p>
+<form id="deleteForm">
+    <input type="text" id="filename" placeholder="filename.txt" required>
+    <button type="submit">Delete</button>
+</form>
+<div id="result"></div>
+
+<script>
+document.getElementById('deleteForm').onsubmit = async (e) => {
+    e.preventDefault();
+    const filename = document.getElementById('filename').value;
+    const result = document.getElementById('result');
+    
+    try {
+        const response = await fetch(`/uploads/${filename}`, { method: 'DELETE' });
+        if (response.ok) {
+            result.innerHTML = '<p style="color:green">File deleted successfully</p>';
+        } else {
+            result.innerHTML = `<p style="color:red">Error: ${response.status}</p>`;
+        }
+    } catch (err) {
+        result.innerHTML = `<p style="color:red">Error: ${err.message}</p>`;
+    }
+};
+</script>
+</body>
+</html>

@@ -393,7 +393,7 @@ void Server::readClient(int fds)
 
 void Server::closeClient(int fd, const std::string& reason)
 {
-	std::cout << "Closing client: " << fd << " reason: " << reason << std::endl;
+	(void)reason;
 	close(fd);
 	this->_client.erase(fd);
 }
@@ -543,7 +543,9 @@ void Server::run()
 
 	signal(SIGINT, signalHandler);
 	signal(SIGPIPE, SIG_IGN);
-	//Falta controlar error 503 (Muchos clientes)
+
+	std::cout << "Server listening on http://127.0.0.1:8080" << std::endl;
+
 	//Loop principal
 	while (!g_shutdown)
 	{
@@ -558,8 +560,7 @@ void Server::run()
 		for (std::map<int,Client>::iterator it = _client.begin(); it != _client.end();)
 		{
 			time_t now = time(NULL);
-			// Timeout de 30 segundos para requests incompletos
-			if ((now - it->second.getLastActivity()) > 10)
+			if ((now - it->second.getLastActivity()) > 60)
 			{
 				std::string response408 = generateErrorResponse(408, "Request Timeout");
 				this->_client[it->first].clearWriteBuffer();

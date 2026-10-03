@@ -2,15 +2,9 @@
 
 Client::Client() : fd(-1), readBuffer(""), writeBuffer(""), lastActivity(time(NULL)), shouldClose(0) {}
 
-Client::Client(int client_fd) : fd(client_fd), readBuffer(""), writeBuffer(""), lastActivity(time(NULL)), shouldClose(0)
-{
-	std::cout << "Client created with fd: " << fd << std::endl;
-}
+Client::Client(int client_fd) : fd(client_fd), readBuffer(""), writeBuffer(""), lastActivity(time(NULL)), shouldClose(0) {}
 
-Client::Client(const Client& other) : fd(other.fd), readBuffer(other.readBuffer), writeBuffer(other.writeBuffer), lastActivity(other.lastActivity), shouldClose(other.shouldClose)
-{
-	std::cout << "Client copy constructor (fd: " << fd << ")" << std::endl;
-}
+Client::Client(const Client& other) : fd(other.fd), readBuffer(other.readBuffer), writeBuffer(other.writeBuffer), lastActivity(other.lastActivity), shouldClose(other.shouldClose) {}
 
 Client& Client::operator=(const Client& other)
 {

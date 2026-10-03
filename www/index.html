@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZZZ Test Server</title>
+    <title>WebServ - 42 Project</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -56,54 +56,43 @@
             font-size: 0.9em;
             opacity: 0.9;
         }
-        .status {
-            background: #f0f0f0;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 20px 0;
-        }
-        .status span {
-            color: #667eea;
-            font-weight: bold;
-        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🚀 ZZZ Test Server</h1>
-        <p class="subtitle">Suite de pruebas alternativa para webserv</p>
+        <h1>WebServ</h1>
+        <p class="subtitle">HTTP/1.1 web server - 42 School Project</p>
 
         <div class="test-grid">
             <a href="/cgi/login.html" class="test-card">
-                <h3>🔐 CGI Login</h3>
-                <p>Prueba de CGI con procesamiento de datos POST</p>
+                <h3>CGI Login</h3>
+                <p>CGI with POST data processing</p>
             </a>
 
             <a href="/cgi/infinite.html" class="test-card">
-                <h3>⏱️ CGI Timeout</h3>
-                <p>Prueba de timeout con script infinito</p>
+                <h3>CGI Timeout</h3>
+                <p>Test timeout with infinite script</p>
             </a>
 
             <a href="/upload/upload.html" class="test-card">
-                <h3>📤 Upload Files</h3>
-                <p>Subida de archivos mediante POST</p>
+                <h3>Upload Files</h3>
+                <p>File upload via POST</p>
             </a>
 
             <a href="/delete/delete.html" class="test-card">
-                <h3>🗑️ Delete Files</h3>
-                <p>Eliminación de archivos mediante DELETE</p>
+                <h3>Delete Files</h3>
+                <p>File deletion via DELETE</p>
             </a>
 
             <a href="/test-autoindex/" class="test-card">
-                <h3>📁 Autoindex</h3>
-                <p>Listado automático de directorios</p>
+                <h3>Autoindex</h3>
+                <p>Automatic directory listing</p>
             </a>
 
             <a href="/redirect-test" class="test-card">
-                <h3>↩️ Redirect 302</h3>
-                <p>Vídeo explicativo paso a paso de Webserv</p>
+                <h3>Redirect 302</h3>
+                <p>HTTP redirect test</p>
             </a>
-
         </div>
     </div>
 </body>
